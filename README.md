@@ -1,4 +1,4 @@
-Projects and Labs
-CS 111 - Operating System Principles
-Winter 16 - P. Eggert
+Projects and Labs\n
+CS 111 - Operating System Principles\n
+Winter 16 - P. Eggert\n
 Partner: Jason Liu
