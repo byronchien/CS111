@@ -36,7 +36,12 @@ int main (int argc, char **argv) {
 	  if(verboseflag){
 	    puts ("--rdonly option\n");
 	  }
-	  //  	  printf("%s, %s\n", optarg, argv[optind++]);
+	  printf("%s, %s\n", optarg, argv[optind++]);
+	  // optarg is the argument immediately following the option
+	  // argv[optind] points to the next argument
+	  
+	  // check size of argv to detect end
+	  
 	  printf("fd: %d\n", open(optarg, O_RDONLY));
 	  break;
 	case 'w':
