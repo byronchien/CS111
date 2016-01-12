@@ -12,7 +12,6 @@ bool verboseflag = false;;
 int main (int argc, char **argv) {
   int c;
 
-  int offset;
   while (1)
     {
       static struct option long_options[] = {
@@ -60,19 +59,20 @@ int main (int argc, char **argv) {
 
 	  for (int i = 0; i < 3; i++){
 	    if (argv[optind] == NULL) {
-	      perror ("Error: Not enough file descriptors");
+	      perror ("Error: Not enough file descriptors.\n");
 	      exit(0);
 	    }
-	    printf("%s", argv[optind]);
+	    printf("%s\n", argv[optind - 1]);
 
-	    newFileDs[i] = *argv[optind];
+	    newFileDs[i] = *argv[optind - 1];
 	    optind++;
 	  }
 
+	  int pipefd[2];
 	  pid_t pid = fork();
 
 	  if (pid == 0){
-	    puts ("this is the child process");
+	    puts ("this is the child process\n");
 
 	    // copy target file descriptors using a loop through argv
 	    // use dup2 to redirect
