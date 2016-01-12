@@ -36,12 +36,13 @@ int main (int argc, char **argv) {
 	  if(verboseflag){
 	    puts ("--rdonly option\n");
 	  }
-	  printf("%s, %s\n", optarg, argv[optind++]);
+	  // printf("%s, %s\n", optarg, argv[optind++]);
+
 	  // optarg is the argument immediately following the option
 	  // argv[optind] points to the next argument
 	  
-	  // check size of argv to detect end
-	  
+	  // check if argv[optind] begins with -- or is equal to null to detect end
+
 	  printf("fd: %d\n", open(optarg, O_RDONLY));
 	  break;
 	case 'w':
@@ -55,19 +56,36 @@ int main (int argc, char **argv) {
 	    puts ("--command option\n");
 	  }
 
+	  int newFileDs[3];
+
+	  for (int i = 0; i < 3; i++){
+	    if (argv[optind] == NULL) {
+	      perror ("Error: Not enough file descriptors");
+	      exit(0);
+	    }
+	    printf("%s", argv[optind]);
+
+	    newFileDs[i] = *argv[optind];
+	    optind++;
+	  }
+
 	  pid_t pid = fork();
 
 	  if (pid == 0){
 	    puts ("this is the child process");
+
+	    // copy target file descriptors using a loop through argv
+	    // use dup2 to redirect
+
+	    // call execvp and pass in the rest of the --command arguments
+	    // execvp (program name, argv[])
 	    exit(0);
 	  }
 	  else {
-	    puts ("this is the parent process");
+	    // this is the parent process
+	    break;
 	  }
 
-	  // use execvp to call function with appropriate arguments
-	  // execvp ( program name, arguments in an array)
-	  // 
 	  break;
 	case 'v':
 	  verboseflag = true;
