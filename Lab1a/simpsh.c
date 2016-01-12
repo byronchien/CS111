@@ -54,6 +54,20 @@ int main (int argc, char **argv) {
 	  if(verboseflag){
 	    puts ("--command option\n");
 	  }
+
+	  pid_t pid = fork();
+
+	  if (pid == 0){
+	    puts ("this is the child process");
+	    exit(0);
+	  }
+	  else {
+	    puts ("this is the parent process");
+	  }
+
+	  // use execvp to call function with appropriate arguments
+	  // execvp ( program name, arguments in an array)
+	  // 
 	  break;
 	case 'v':
 	  verboseflag = true;
