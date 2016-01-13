@@ -43,7 +43,7 @@ int main (int argc, char **argv) {
 	  
 	  // check if argv[optind] begins with -- or is equal to null to detect end
 
-	  //  printf("fd: %d\n", open(optarg, O_RDONLY));
+	  printf("fd: %d\n", open(optarg, O_RDONLY));
 	  
 	  break;
 	case 'w':
@@ -51,7 +51,7 @@ int main (int argc, char **argv) {
 	    puts ("--wronly option\n");
 	  }
 	  
-	  // printf("fd: %d\n", open(optarg, O_WRONLY));
+	  printf("fd: %d\n", open(optarg, O_WRONLY));
 	  
 	  break;
 	case 'c':
