@@ -77,10 +77,9 @@ int main (int argc, char **argv) {
 	  optind--; // make optind == optarg for consistancy
 	  for (int i = 0; i < 3; i++){
 	    if (argv[optind] == NULL) {
-	      perror ("Error: Not enough file descriptors.\n");
+	      fprintf (stderr,"Error: Not enough file descriptors.\n");
 	      exit(0);
 	    }
-	    printf("%s ", argv[optind]);
 
 	    newFileDs[i] = *argv[optind] - '0';
 	    newFileDs[i] += 3;
@@ -100,7 +99,9 @@ int main (int argc, char **argv) {
 	    n_args++;
 	    t_optind++;
 	  }
-	  printf("Number of args: %d\n", n_args);
+
+	  // test statement to check number of arguments
+	  // printf("Number of args: %d\n", n_args);
 
 	  char **args = malloc(sizeof(char*) * (n_args));
 	  for (int i = 0; i < n_args; i++) {
@@ -108,9 +109,12 @@ int main (int argc, char **argv) {
 	    optind++;
 	  }
 
+	  /*
+	  test loop to print all the arguments for the command
 	  for (int i = 0; i < n_args; i++) {
 	    printf("%s\n", args[i]);
 	  }
+	  */
 	  
 	  pid_t pid = fork();
 	  // printf("%s, %s\n", optarg, argv[optind++]);
@@ -120,12 +124,7 @@ int main (int argc, char **argv) {
 	  // check size of argv to detect end
 	  
 	  if (pid == 0){
-	    puts ("this is the child process\n");
-
-	    // 0 is stdin
-	    // 1 is stdout
-	    // 2 is stderr
-	    
+	    // this is the child process
 	    for(int i = 0; i < 3; i++) {
 	      dup2(newFileDs[i],i);
 	      }
