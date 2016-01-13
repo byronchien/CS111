@@ -58,7 +58,18 @@ int main (int argc, char **argv) {
 	  break;
 	case 'c':
 	  if(verboseflag){
-	    fprintf(stdout,"--command \n");
+	    fprintf(stdout,"--command");
+
+	    int temp = optind - 1;
+	    while(1) {
+	      if ((argv[temp] == NULL) || (argv[temp][0]=='-' && argv[temp][1] == '-')) {
+		fprintf(stdout,"\n");
+		break;
+	      }
+	      fprintf(stdout," %s",argv[temp]);
+	      temp++;
+	    }
+
 	  }
 
 	  int newFileDs[3];
@@ -69,7 +80,7 @@ int main (int argc, char **argv) {
 	      perror ("Error: Not enough file descriptors.\n");
 	      exit(0);
 	    }
-	    printf("%s\n", argv[optind]);
+	    printf("%s ", argv[optind]);
 
 	    newFileDs[i] = *argv[optind] - '0';
 	    newFileDs[i] += 3;
