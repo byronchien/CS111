@@ -42,8 +42,9 @@ int main (int argc, char **argv) {
 	  // argv[optind] points to the next argument
 	  
 	  // check if argv[optind] begins with -- or is equal to null to detect end
-	  int fd = open(optarg,O_RDONLY);
-	  //	  fprintf("fd: %d\n", open(optarg, O_RDONLY));
+	  // int fd = open(optarg,O_RDONLY);
+
+	  printf("fd: %d\n", open(optarg, O_RDONLY));
 	  
 	  break;
 	case 'w':
@@ -56,7 +57,7 @@ int main (int argc, char **argv) {
 	  break;
 	case 'c':
 	  if(verboseflag){
-	    printf("--command \n");
+	    puts ("--command \n");
 	  }
 
 	  int newFileDs[3];
@@ -89,18 +90,18 @@ int main (int argc, char **argv) {
 	  }
 	  printf("Number of args: %d\n", n_args);
 
-	  char **args = malloc(sizeof(char*) * (n_args + 1));
+	  char **args = malloc(sizeof(char*) * (n_args));
 	  for (int i = 0; i < n_args; i++) {
 	    args[i] = argv[optind];
 	    optind++;
 	  }
-	  args[n_args] = NULL;
+
 	  for (int i = 0; i < n_args; i++) {
 	    printf("%s\n", args[i]);
 	  }
 	  
 	  pid_t pid = fork();
-          printf("%s, %s\n", optarg, argv[optind++]);
+	  // printf("%s, %s\n", optarg, argv[optind++]);
 	  // optarg is the argument immediately following the option
 	  // argv[optind] points to the next argument
 
