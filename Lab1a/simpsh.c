@@ -35,7 +35,7 @@ int main (int argc, char **argv) {
 	{
 	case 'r':
 	  if(verboseflag){
-	    printf("--rdonly %s\n",optarg);
+	    fprintf(stdout,"--rdonly %s\n",optarg);
 	  }
 	  
 	  // optarg is the argument immediately following the option
@@ -44,20 +44,21 @@ int main (int argc, char **argv) {
 	  // check if argv[optind] begins with -- or is equal to null to detect end
 	  // int fd = open(optarg,O_RDONLY);
 
-	  printf("fd: %d\n", open(optarg, O_RDONLY));
+	  open(optarg,O_RDONLY);
+	  // printf("fd: %d\n", open(optarg, O_RDONLY));
 	  
 	  break;
 	case 'w':
 	  if(verboseflag){
-	    printf("--wronly %s\n",optarg);
+	    fprintf(stdout,"--wronly %s\n",optarg);
 	  }
 	  
-	  printf("fd: %d\n", open(optarg, O_WRONLY));
+	  open(optarg, O_WRONLY);
 	  
 	  break;
 	case 'c':
 	  if(verboseflag){
-	    puts ("--command \n");
+	    fprintf(stdout,"--command \n");
 	  }
 
 	  int newFileDs[3];
