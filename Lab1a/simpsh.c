@@ -55,20 +55,44 @@ int main (int argc, char **argv) {
 	    puts ("--command option\n");
 	  }
 
-	  int newFileDs[3];
+	  char * newFileDs[3];
 
+	  optind--; // make optind == optarg for consistancy
 	  for (int i = 0; i < 3; i++){
 	    if (argv[optind] == NULL) {
 	      perror ("Error: Not enough file descriptors.\n");
 	      exit(0);
 	    }
-	    printf("%s\n", argv[optind - 1]);
+	    printf("%s\n", argv[optind]);
 
-	    newFileDs[i] = *argv[optind - 1];
+	    newFileDs[i] = argv[optind];
 	    optind++;
 	  }
 
-	  int pipefd[2];
+	  /* Collect arguments for cmd.
+	     Stop conditions:
+	     - If you see a '--' (double hyphen)
+	     - Hit a NULL byte */
+	  int n_args = 0;
+	  int t_optind = optind;
+	  while(1) {
+	    if (argv[t_optind] == NULL) break;
+	    if (argv[t_optind][0] == '-' && argv[t_optind][1] == '-') break;
+	    n_args++;
+	    t_optind++;
+	  }
+	  printf("Number of args: %d\n", n_args);
+
+	  char **args = malloc(sizeof(char*) * (n_args + 1));
+	  for (int i = 0; i < n_args; i++) {
+	    args[i] = argv[optind];
+	    optind++;
+	  }
+	  args[n_args] = NULL;
+	  for (int i = 0; i < n_args; i++) {
+	    printf("%s\n", args[i]);
+	  }
+	  
 	  pid_t pid = fork();
 
 	  if (pid == 0){
