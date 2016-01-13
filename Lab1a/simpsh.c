@@ -14,6 +14,7 @@ int main (int argc, char **argv) {
 
   while (1)
     {
+      // array of options
       static struct option long_options[] = {
 	{"rdonly",required_argument, 0, 'r'},
 	{"wronly",required_argument, 0, 'w'},
@@ -24,6 +25,7 @@ int main (int argc, char **argv) {
 
       int option_index = 0;
 
+      // retrieve the next option; select case based on value returned
       c = getopt_long (argc, argv, "", long_options, &option_index);
 
       if (c == -1)
@@ -35,20 +37,22 @@ int main (int argc, char **argv) {
 	  if(verboseflag){
 	    puts ("--rdonly option\n");
 	  }
-	  // printf("%s, %s\n", optarg, argv[optind++]);
-
+	  
 	  // optarg is the argument immediately following the option
 	  // argv[optind] points to the next argument
 	  
 	  // check if argv[optind] begins with -- or is equal to null to detect end
 
-	  printf("fd: %d\n", open(optarg, O_RDONLY));
+	  //  printf("fd: %d\n", open(optarg, O_RDONLY));
+	  
 	  break;
 	case 'w':
 	  if(verboseflag){
 	    puts ("--wronly option\n");
 	  }
-	  printf("fd: %d\n", open(optarg, O_WRONLY));
+	  
+	  // printf("fd: %d\n", open(optarg, O_WRONLY));
+	  
 	  break;
 	case 'c':
 	  if(verboseflag){
