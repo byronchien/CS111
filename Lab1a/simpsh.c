@@ -44,8 +44,8 @@ int main (int argc, char **argv) {
 	  // check if argv[optind] begins with -- or is equal to null to detect end
 	  // int fd = open(optarg,O_RDONLY);
 
-	  open(optarg,O_RDONLY);
-	  // printf("fd: %d\n", open(optarg, O_RDONLY));
+	  int fdtemp1 = open(optarg,O_RDONLY);
+	  printf("RDONLY fd: %d\n", fdtemp1);
 	  
 	  break;
 	case 'w':
@@ -53,7 +53,8 @@ int main (int argc, char **argv) {
 	    fprintf(stdout,"--wronly %s\n",optarg);
 	  }
 	  
-	  open(optarg, O_WRONLY);
+	  int fdtemp2 = open(optarg, O_WRONLY);
+	  printf("WRONLY fd: %d\n", fdtemp2);
 	  
 	  break;
 	case 'c':
@@ -83,6 +84,7 @@ int main (int argc, char **argv) {
 
 	    newFileDs[i] = *argv[optind] - '0';
 	    newFileDs[i] += 3;
+	    printf("I/O #%d is set to file descriptor %d\n", i, newFileDs[i]);
 	    
 	    optind++;
 	  }
@@ -106,17 +108,18 @@ int main (int argc, char **argv) {
 	  char **args = malloc(sizeof(char*) * (n_args));
 	  for (int i = 0; i < n_args; i++) {
 	    args[i] = argv[optind];
+	    //fprintf(stdout,"%s \n",argv[optind]);
 	    optind++;
 	  }
 
-	  /*
-	  test loop to print all the arguments for the command
+	  //test loop to print all the arguments for the command
 	  for (int i = 0; i < n_args; i++) {
 	    printf("%s\n", args[i]);
-	  }
-	  */
+	    }
+	  
 	  
 	  pid_t pid = fork();
+
 	  // printf("%s, %s\n", optarg, argv[optind++]);
 	  // optarg is the argument immediately following the option
 	  // argv[optind] points to the next argument
@@ -126,9 +129,9 @@ int main (int argc, char **argv) {
 	  if (pid == 0){
 	    // this is the child process
 	    for(int i = 0; i < 3; i++) {
-	      dup2(newFileDs[i],i);
+	      dup2(newFileDs[i],i);	      
 	      }
-	    
+
 	    execvp(args[0], args);
 	    free(args);
 	    // copy target file descriptors using a loop through argv
