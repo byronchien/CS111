@@ -55,7 +55,7 @@ int main (int argc, char **argv) {
 	    puts ("--command option\n");
 	  }
 
-	  char * newFileDs[3];
+	  int newFileDs[3];
 
 	  optind--; // make optind == optarg for consistancy
 	  for (int i = 0; i < 3; i++){
@@ -65,7 +65,9 @@ int main (int argc, char **argv) {
 	    }
 	    printf("%s\n", argv[optind]);
 
-	    newFileDs[i] = argv[optind];
+	    newFileDs[i] = *argv[optind] - '0';
+	    newFileDs[i] += 3;
+	    
 	    optind++;
 	  }
 
@@ -94,10 +96,25 @@ int main (int argc, char **argv) {
 	  }
 	  
 	  pid_t pid = fork();
+          printf("%s, %s\n", optarg, argv[optind++]);
+	  // optarg is the argument immediately following the option
+	  // argv[optind] points to the next argument
 
+	  // check size of argv to detect end
+	  
 	  if (pid == 0){
 	    puts ("this is the child process\n");
 
+	    // 0 is stdin
+	    // 1 is stdout
+	    // 2 is stderr
+	    
+	    for(int i = 0; i < 3; i++) {
+	      dup2(newFileDs[i],i);
+	      }
+	    
+	    execvp(args[0], args);
+	    free(args);
 	    // copy target file descriptors using a loop through argv
 	    // use dup2 to redirect
 
@@ -107,6 +124,7 @@ int main (int argc, char **argv) {
 	  }
 	  else {
 	    // this is the parent process
+	    free(args);
 	    break;
 	  }
 
