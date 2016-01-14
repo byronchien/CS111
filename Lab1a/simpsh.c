@@ -109,17 +109,12 @@ int main (int argc, char **argv) {
 	  // argument initially rather than the first
 	  optind--;
 	  for (int i = 0; i < 3; i++){
-	    if (argv[optind] == NULL) {
-	      fprintf (stderr,"Error: Not enough file descriptors.\n");
-	      exit(0);
-	    }
-
 	    const char** ERR = NULL;
 	    newFileDs[i] = atoi(argv[optind]);
 	    
 	    if (newFileDs[i] < 0 || newFileDs[i] > highestFileDescriptor)
 	      {
-		fprintf (stderr,"invalid file descriptor");
+		fprintf (stderr,"invalid file descriptor %d\n", newFileDs[i]);
 		break;
 	      }
 	    else {
@@ -164,11 +159,6 @@ int main (int argc, char **argv) {
 	    // execute the command; args[0] contains the file name and
 	    // args contains the previously dynamically allocated array
 	    int success = execvp(args[0], args);
-
-	    if (success == -1)
-	      {
-		fprintf(stderr, "execution error");
-	      }
 	    
 	    // free the dynamically allocated array of arguments
 	    free(args);

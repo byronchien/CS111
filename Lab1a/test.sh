@@ -14,7 +14,7 @@ printf "the\nquick\nbrown\nfox\njumps\nover\nthe\nlazy\ndog" > 0temp
 printf "THE\nQUICK\nBROWN\nFOX\nJUMPS\nOVER\nTHE\nLAZY\nDOG" > 1temp
 
 ./simpsh \
-    --verbose
+    --verbose \
     --rdonly 0temp \
     --rdonly 1temp \
     --wronly 2temp \
