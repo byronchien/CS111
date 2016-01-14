@@ -104,19 +104,6 @@ int main (int argc, char **argv) {
 
 	  // test statement to check number of arguments
 	  // printf("Number of args: %d\n", n_args);
-
-	  char **args = malloc(sizeof(char*) * (n_args));
-	  for (int i = 0; i < n_args; i++) {
-	    args[i] = argv[optind];
-	    //fprintf(stdout,"%s \n",argv[optind]);
-	    optind++;
-	  }
-
-	  //test loop to print all the arguments for the command
-	  for (int i = 0; i < n_args; i++) {
-	    printf("%s\n", args[i]);
-	    }
-	  
 	  
 	  pid_t pid = fork();
 
@@ -127,6 +114,22 @@ int main (int argc, char **argv) {
 	  // check size of argv to detect end
 	  
 	  if (pid == 0){
+
+	    
+	    char **args = malloc(sizeof(char*) * (n_args));
+	    for (int i = 0; i < n_args; i++) {
+	      args[i] = argv[optind];
+	      //fprintf(stdout,"%s \n",argv[optind]);
+	      optind++;
+	    }
+
+	    //test loop to print all the arguments for the command
+	    for (int i = 0; i < n_args; i++) {
+	      printf("%s\n", args[i]);
+	    }
+	  
+
+
 	    // this is the child process
 	    for(int i = 0; i < 3; i++) {
 	      dup2(newFileDs[i],i);	      
@@ -143,7 +146,7 @@ int main (int argc, char **argv) {
 	  }
 	  else {
 	    // this is the parent process
-	    free(args);
+	   
 	    break;
 	  }
 
