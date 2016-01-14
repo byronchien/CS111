@@ -59,8 +59,8 @@ int main (int argc, char **argv) {
 
 	  highestFileDescriptor++;
 	  // printf("RDONLY fd: %d\n", fdtemp1);
-	  
 	  break;
+	  
 	case 'w':
 	  if(verboseflag){
 	    fprintf(stdout,"--wronly %s\n",optarg);
@@ -76,10 +76,11 @@ int main (int argc, char **argv) {
 	      fprintf(stderr, "invalid argument to --wronly");
 	      break;
 	    }
+
+ 	  highestFileDescriptor++;
 	  
 	  break;
 
-	  highestFileDescriptor++;
 	case 'c':
 	  if(verboseflag){
 	    fprintf(stdout,"--command");
@@ -178,13 +179,17 @@ int main (int argc, char **argv) {
 	   
 	    break;
 	  }
-
 	  break;
+	  
 	case 'v':
 	  verboseflag = true;
 	  break;
+
+	case -1:
+	  break;
+
 	default:
-	  fprintf(stderr, "lol what is that. i don't know what that is");
+	  fprintf(stderr, "unrecognized option %d",c);
 	  break;
 	}
     }
