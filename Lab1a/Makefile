@@ -34,7 +34,7 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES) check-dist
 
 check: $(TEST_BASES)
 
-$(TEST_BASES): timetrash
+$(TEST_BASES): simpsh
 	./$@.sh
 
 clean:

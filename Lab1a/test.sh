@@ -29,6 +29,8 @@ if diff 4temp 0temp >/dev/null ; then
     echo "Passed first test."
 else
     echo "Failed first test."
+    rm *temp
+    rm 0ans
     exit
 fi
 
@@ -36,6 +38,8 @@ if diff 2temp 0ans >/dev/null ; then
     echo "Passed second test."
 else
     echo "Failed second test."
+    rm *temp
+    rm 0ans
     exit
 fi
 
