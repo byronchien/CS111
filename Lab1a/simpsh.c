@@ -189,7 +189,6 @@ int main (int argc, char **argv) {
 	  break;
 
 	default:
-	  fprintf(stderr, "unrecognized option %d",c);
 	  break;
 	}
     }
