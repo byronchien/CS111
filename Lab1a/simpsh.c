@@ -41,26 +41,47 @@ int main (int argc, char **argv) {
 	  // optarg is the argument immediately following the option
 	  // argv[optind] points to the next argument
 	  
-	  // check if argv[optind] begins with -- or is equal to null to detect end
-	  // int fd = open(optarg,O_RDONLY);
+	  // fdtemp contains the file descriptor for the argument passed in
+	  // optarg points to the argument immediately following the option
+	  int fdtemp = open(optarg,O_RDONLY);
 
-	  int fdtemp1 = open(optarg,O_RDONLY);
-	  printf("RDONLY fd: %d\n", fdtemp1);
+	  // check to see whether open returned a valid file descriptor
+	  // otherwise throw an error
+	  if (fdtemp  == -1)
+	    {
+	      fprintf(stderr, "invalid argument");
+	      exit(0);
+	    }
+	  
+	  // printf("RDONLY fd: %d\n", fdtemp1);
 	  
 	  break;
 	case 'w':
 	  if(verboseflag){
 	    fprintf(stdout,"--wronly %s\n",optarg);
 	  }
-	  
+
+	  // same as for --rdonly
 	  int fdtemp2 = open(optarg, O_WRONLY);
-	  printf("WRONLY fd: %d\n", fdtemp2);
+	  // printf("WRONLY fd: %d\n", fdtemp2);
+
+	  // same as for --rdonly; checks for a valid file descriptor
+	  if (fdtemp2 == -1)
+	    {
+	      fprintf(stderr, "invalid argument");
+	      exit(0);
+	    }
 	  
 	  break;
 	case 'c':
 	  if(verboseflag){
 	    fprintf(stdout,"--command");
 
+	    // loop through all the arguments and print them until a
+	    // null byte or another long option is encountered
+
+	    // optind is decremented since optind is set to the second
+	    // argument initially rather than the first
 	    int temp = optind - 1;
 	    while(1) {
 	      if ((argv[temp] == NULL) || (argv[temp][0]=='-' && argv[temp][1] == '-')) {
@@ -73,9 +94,12 @@ int main (int argc, char **argv) {
 
 	  }
 
+	  // array to store the arguments for new file descriptors
 	  int newFileDs[3];
 
-	  optind--; // make optind == optarg for consistancy
+	  // optind is decremented since optind is set to the second
+	  // argument initially rather than the first
+	  optind--;
 	  for (int i = 0; i < 3; i++){
 	    if (argv[optind] == NULL) {
 	      fprintf (stderr,"Error: Not enough file descriptors.\n");
@@ -89,10 +113,9 @@ int main (int argc, char **argv) {
 	    optind++;
 	  }
 
-	  /* Collect arguments for cmd.
-	     Stop conditions:
-	     - If you see a '--' (double hyphen)
-	     - Hit a NULL byte */
+	  // count the number of arguments for the command to be run
+	  // set a temporary variable to the index of the command and
+	  // loop until a long option or a null byte is encountered
 	  int n_args = 0;
 	  int t_optind = optind;
 	  while(1) {
@@ -102,51 +125,36 @@ int main (int argc, char **argv) {
 	    t_optind++;
 	  }
 
-	  // test statement to check number of arguments
-	  // printf("Number of args: %d\n", n_args);
-	  
 	  pid_t pid = fork();
 
-	  // printf("%s, %s\n", optarg, argv[optind++]);
-	  // optarg is the argument immediately following the option
-	  // argv[optind] points to the next argument
+	  if (pid == 0){ //child process
 
-	  // check size of argv to detect end
-	  
-	  if (pid == 0){
-
-	    
+	    // dynamically allocate array for the command's arguments;
+	    // copy the arguments from optind's position for the number
+	    // of arguments counted previously;	add one extra slot for
+	    // a null byte at the end
 	    char **args = malloc(sizeof(char*) * (n_args+1));
 	    for (int i = 0; i < n_args; i++) {
 	      args[i] = argv[optind];
-	      //fprintf(stdout,"%s \n",argv[optind]);
 	      optind++;
 	    }
 	    args[n_args] = NULL;
 
-	    //test loop to print all the arguments for the command
-	    for (int i = 0; i < n_args; i++) {
-	      printf("%s\n", args[i]);
-	    }
-	  
-
-
-	    // this is the child process
+	    // reassign the file descriptors retrieved previously
 	    for(int i = 0; i < 3; i++) {
 	      dup2(newFileDs[i],i);	      
 	      }
 
+	    // execute the command; args[0] contains the file name and
+	    // args contains the previously dynamically allocated array
 	    execvp(args[0], args);
-	    free(args);
-	    // copy target file descriptors using a loop through argv
-	    // use dup2 to redirect
 
-	    // call execvp and pass in the rest of the --command arguments
-	    // execvp (program name, argv[])
+	    // free the dynamically allocated array of arguments
+	    free(args);
+
 	    exit(0);
 	  }
-	  else {
-	    // this is the parent process
+	  else { //parent process
 	   
 	    break;
 	  }
