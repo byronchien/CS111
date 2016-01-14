@@ -115,7 +115,7 @@ int main (int argc, char **argv) {
 	    }
 
 	    const char** ERR = NULL;
-	    newFileDs[i] = *argv[optind] - '0';
+	    newFileDs[i] = atoi(argv[optind]);
 	    
 	    if (newFileDs[i] < 0 || newFileDs[i] > highestFileDescriptor)
 	      {
