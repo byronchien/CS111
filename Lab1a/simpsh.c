@@ -9,8 +9,12 @@
 
 bool verboseflag = false;;
 
+long long strtonum(const char *nptr,long long minval, long long maxval,
+		   const char **errstr);
+
 int main (int argc, char **argv) {
   int c;
+  int highestFileDescriptor = 2;
 
   while (1)
     {
@@ -49,10 +53,11 @@ int main (int argc, char **argv) {
 	  // otherwise throw an error
 	  if (fdtemp  == -1)
 	    {
-	      fprintf(stderr, "invalid argument");
-	      exit(0);
+	      fprintf(stderr, "invalid argument to --rdonly");
+	      break;
 	    }
-	  
+
+	  highestFileDescriptor++;
 	  // printf("RDONLY fd: %d\n", fdtemp1);
 	  
 	  break;
@@ -68,11 +73,13 @@ int main (int argc, char **argv) {
 	  // same as for --rdonly; checks for a valid file descriptor
 	  if (fdtemp2 == -1)
 	    {
-	      fprintf(stderr, "invalid argument");
-	      exit(0);
+	      fprintf(stderr, "invalid argument to --wronly");
+	      break;
 	    }
 	  
 	  break;
+
+	  highestFileDescriptor++;
 	case 'c':
 	  if(verboseflag){
 	    fprintf(stdout,"--command");
@@ -106,9 +113,17 @@ int main (int argc, char **argv) {
 	      exit(0);
 	    }
 
+	    const char** ERR = NULL;
 	    newFileDs[i] = *argv[optind] - '0';
-	    newFileDs[i] += 3;
-	    printf("I/O #%d is set to file descriptor %d\n", i, newFileDs[i]);
+	    
+	    if (newFileDs[i] < 0 || newFileDs[i] > highestFileDescriptor)
+	      {
+		fprintf (stderr,"invalid file descriptor");
+		break;
+	      }
+	    else {
+	      newFileDs[i] += 3;
+	    }
 	    
 	    optind++;
 	  }
@@ -147,8 +162,13 @@ int main (int argc, char **argv) {
 
 	    // execute the command; args[0] contains the file name and
 	    // args contains the previously dynamically allocated array
-	    execvp(args[0], args);
+	    int success = execvp(args[0], args);
 
+	    if (success == -1)
+	      {
+		fprintf(stderr, "execution error");
+	      }
+	    
 	    // free the dynamically allocated array of arguments
 	    free(args);
 
@@ -164,7 +184,8 @@ int main (int argc, char **argv) {
 	  verboseflag = true;
 	  break;
 	default:
-	  abort();
+	  fprintf(stderr, "lol what is that. i don't know what that is");
+	  break;
 	}
     }
   return 0;
