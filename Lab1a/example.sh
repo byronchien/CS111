@@ -1,10 +1,11 @@
 ./simpsh \
+    --verbose \
     --rdonly ay \
     --rdonly by \
-    --wronly cy \
+    --rdonly cy \
     --wronly dy \
     --wronly ey \
     --wronly fy \
-    --command 0 2 3 cat \
-    --command 1 4 5 tr A-Z a-z \
-    --command 0 3 3 sort
+    --command 0 3 3 cat \
+    --command 2 5 5 tr A-Z a-z \
+    --command 1 4 4 sort 

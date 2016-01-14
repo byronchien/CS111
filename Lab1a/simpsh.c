@@ -116,12 +116,13 @@ int main (int argc, char **argv) {
 	  if (pid == 0){
 
 	    
-	    char **args = malloc(sizeof(char*) * (n_args));
+	    char **args = malloc(sizeof(char*) * (n_args+1));
 	    for (int i = 0; i < n_args; i++) {
 	      args[i] = argv[optind];
 	      //fprintf(stdout,"%s \n",argv[optind]);
 	      optind++;
 	    }
+	    args[n_args] = NULL;
 
 	    //test loop to print all the arguments for the command
 	    for (int i = 0; i < n_args; i++) {
