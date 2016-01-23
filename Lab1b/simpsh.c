@@ -53,7 +53,7 @@ int main (int argc, char **argv) {
 	  // otherwise throw an error
 	  if (fdtemp  == -1)
 	    {
-	      fprintf(stderr, "invalid argument to --rdonly");
+	      fprintf(stderr, "invalid argument to --rdonly\n");
 	      break;
 	    }
 
@@ -73,7 +73,7 @@ int main (int argc, char **argv) {
 	  // same as for --rdonly; checks for a valid file descriptor
 	  if (fdtemp2 == -1)
 	    {
-	      fprintf(stderr, "invalid argument to --wronly");
+	      fprintf(stderr, "invalid argument to --wronly\n");
 	      break;
 	    }
 
