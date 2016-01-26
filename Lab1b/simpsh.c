@@ -25,6 +25,7 @@ int main (int argc, char **argv) {
 	{"rdonly",required_argument, 0, 'r'},
 	{"wronly",required_argument, 0, 'w'},
 	{"command",required_argument, 0, 'c'},
+	{"close",required_argument, 0, 'l'},
 	{"verbose",no_argument, 0, 'v'},
 	{0,0,0,0}
       };
@@ -39,6 +40,19 @@ int main (int argc, char **argv) {
       
       switch(c)
 	{
+	case 'l':
+	  if(verboseflag){
+	    fprintf(stdout,"--close %s\n",optarg);
+	  }
+
+	  int fd = atoi(optarg);
+
+	  if (fd >= numberOfFDs) {
+	    fprintf(stderr,"invalid argument; file descriptor too large");
+	  }
+
+	  validFDs[fd] = 0;
+	  break;
 	case 'r':
 	  if(verboseflag){
 	    fprintf(stdout,"--rdonly %s\n",optarg);
@@ -138,7 +152,8 @@ int main (int argc, char **argv) {
 	      }
 	    else if (validFDs[newFileDs[i]] == 0)
 	      {
-		fprintf (stderr,"error: accessing closed file (descriptor %d\n)",newFileDs[i]+3);
+		fprintf (stderr,"error: accessing closed file (descriptor %d)\n",newFileDs[i]+3);
+		break;
 	      }
 	    else {
 	      newFileDs[i] += 3;
