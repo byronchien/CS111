@@ -24,7 +24,6 @@ int main (int argc, char **argv) {
 	{"wronly",required_argument, 0, 'w'},
 	{"command",required_argument, 0, 'c'},
 	{"verbose",no_argument, 0, 'v'},
-	{"pipe",no_argument, 0, 'p'},
 	{0,0,0,0}
       };
 
@@ -48,36 +47,20 @@ int main (int argc, char **argv) {
 	  
 	  // fdtemp contains the file descriptor for the argument passed in
 	  // optarg points to the argument immediately following the option
-	  int fdtemp = open(optarg,O_RDONLY);
+	  int fdtemp1 = open(optarg,O_RDONLY);
 
 	  // check to see whether open returned a valid file descriptor
 	  // otherwise throw an error
-	  if (fdtemp  == -1)
+	  if (fdtemp1  == -1)
 	    {
 	      fprintf(stderr, "invalid argument to --rdonly");
 	      break;
 	    }
 
 	  highestFileDescriptor++;
-	  // printf("RDONLY fd: %d\n", fdtemp1);
+	  //printf("RDONLY fd: %d\n", fdtemp1);
 	  break;
 
-	case 'p':
-	  if(verboseflag){
-	    fprintf(stdout,"--pipe");
-	  }
-
-	  // int pipefd[2];
-	  
-	  int check = pipe(pipefd);
-
-	  highestFileDescriptor += 2;
-	  // NOTE: FIRST FILE DESCRIPTOR IS READ AND SECOND IS WRITE
-	  
-	  // printf("file descriptor read: %d, file descriptor write: %d\n",pipefd[0],pipefd[1]);
-	  
-	  break;
-	  
 	case 'w':
 	  if(verboseflag){
 	    fprintf(stdout,"--wronly %s\n",optarg);
@@ -85,7 +68,7 @@ int main (int argc, char **argv) {
 
 	  // same as for --rdonly
 	  int fdtemp2 = open(optarg, O_WRONLY);
-	  // printf("WRONLY fd: %d\n", fdtemp2);
+	  //printf("WRONLY fd: %d\n", fdtemp2);
 
 	  // same as for --rdonly; checks for a valid file descriptor
 	  if (fdtemp2 == -1)
@@ -136,6 +119,7 @@ int main (int argc, char **argv) {
 	      }
 	    else {
 	      newFileDs[i] += 3;
+	      //printf("%d\n",newFileDs[i]);
 	    }
 	    
 	    optind++;
