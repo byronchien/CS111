@@ -15,6 +15,8 @@ long long strtonum(const char *nptr,long long minval, long long maxval,
 int main (int argc, char **argv) {
   int c;
   int highestFileDescriptor = 2;
+  int numberOfFDs = 0;
+  int* validFDs = NULL;
 
   while (1)
     {
@@ -57,6 +59,15 @@ int main (int argc, char **argv) {
 	      break;
 	    }
 
+
+	  //increment the number of file descriptors
+	  //reallocate the array of file descriptors for the new index and
+	  //set the new element to 1
+	  numberOfFDs++;
+	  validFDs = realloc(validFDs, numberOfFDs*sizeof(int));
+	  validFDs[numberOfFDs - 1] = 1;
+
+	  
 	  highestFileDescriptor++;
 	  //printf("RDONLY fd: %d\n", fdtemp1);
 	  break;
@@ -77,6 +88,14 @@ int main (int argc, char **argv) {
 	      break;
 	    }
 
+  	  //increment the number of file descriptors
+	  //reallocate the array of file descriptors for the new index and
+	  //set the new element to 1
+	  numberOfFDs++;
+	  validFDs = realloc(validFDs, numberOfFDs*sizeof(int));
+	  validFDs[numberOfFDs - 1] = 1;
+
+	  
  	  highestFileDescriptor++;
 	  
 	  break;
@@ -117,6 +136,10 @@ int main (int argc, char **argv) {
 		fprintf (stderr,"invalid file descriptor %d\n", newFileDs[i]);
 		break;
 	      }
+	    else if (validFDs[newFileDs[i]] == 0)
+	      {
+		fprintf (stderr,"error: accessing closed file (descriptor %d\n)",newFileDs[i]+3);
+	      }
 	    else {
 	      newFileDs[i] += 3;
 	      //printf("%d\n",newFileDs[i]);
@@ -140,6 +163,21 @@ int main (int argc, char **argv) {
 	  pid_t pid = fork();
 
 	  if (pid == 0){ //child process
+
+	    for (int k = 0; k < 3; k++) {
+	      validFDs[newFileDs[k] - 3] = 0;
+	    }
+
+	    for (int k = 0; k < numberOfFDs; k++) {
+	      if (validFDs[k] != 0) {
+		int j = close(k + 3);
+		if (j != 0 ) {
+		  fprintf(stderr,"error closing file descriptor %d\n",k);
+		  abort();
+		}
+	      }
+	    }
+	    
 
 	    // dynamically allocate array for the command's arguments;
 	    // copy the arguments from optind's position for the number
@@ -183,6 +221,12 @@ int main (int argc, char **argv) {
 	  break;
 	}
     }
+
+  for (int k = 0; k < numberOfFDs; k++)
+    {
+      printf("%d",validFDs[k]);
+    }
+  
   return 0;
 
 }
