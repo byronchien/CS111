@@ -24,6 +24,7 @@ int main (int argc, char **argv) {
 	{"wronly",required_argument, 0, 'w'},
 	{"command",required_argument, 0, 'c'},
 	{"verbose",no_argument, 0, 'v'},
+	{"pipe",no_argument, 0, 'p'},
 	{0,0,0,0}
       };
 
@@ -59,6 +60,22 @@ int main (int argc, char **argv) {
 
 	  highestFileDescriptor++;
 	  // printf("RDONLY fd: %d\n", fdtemp1);
+	  break;
+
+	case 'p':
+	  if(verboseflag){
+	    fprintf(stdout,"--pipe");
+	  }
+
+	  // int pipefd[2];
+	  
+	  int check = pipe(pipefd);
+
+	  highestFileDescriptor += 2;
+	  // NOTE: FIRST FILE DESCRIPTOR IS READ AND SECOND IS WRITE
+	  
+	  // printf("file descriptor read: %d, file descriptor write: %d\n",pipefd[0],pipefd[1]);
+	  
 	  break;
 	  
 	case 'w':
