@@ -27,6 +27,7 @@ int main (int argc, char **argv) {
 	{"command",required_argument, 0, 'c'},
 	{"close",required_argument, 0, 'l'},
 	{"verbose",no_argument, 0, 'v'},
+	{"pipe",no_argument, 0, 'p'},
 	{0,0,0,0}
       };
 
@@ -40,6 +41,27 @@ int main (int argc, char **argv) {
       
       switch(c)
 	{
+	case 'p':
+	  if(verboseflag){
+	    fprintf(stdout,"--pipe\n");
+	  }
+
+	  int pipeArgs[2];
+
+	  int check = pipe(pipeArgs);
+
+	  if(check < 0) {
+	    fprintf(stderr,"error creating pipe");
+	    break;
+	  }
+
+	  numberOfFDs += 2;
+	  validFDs = realloc(validFDs, numberOfFDs*sizeof(int));
+	  validFDs[numberOfFDs - 1] = 1;
+	  validFDs[numberOfFDs - 2] = 1;
+	  highestFileDescriptor += 2;
+	  break;
+	  
 	case 'l':
 	  if(verboseflag){
 	    fprintf(stdout,"--close %s\n",optarg);
