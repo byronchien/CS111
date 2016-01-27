@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <signal.h>
 
 bool verboseflag = false;;
 
@@ -28,6 +29,7 @@ int main (int argc, char **argv) {
 	{"close",required_argument, 0, 'l'},
 	{"verbose",no_argument, 0, 'v'},
 	{"pipe",no_argument, 0, 'p'},
+	{"abort",no_argument, 0, 'a'},
 	{0,0,0,0}
       };
 
@@ -41,6 +43,13 @@ int main (int argc, char **argv) {
       
       switch(c)
 	{
+	case 'a':
+	  if (verboseflag) {
+	    fprintf(stdout,"--abort");
+	  }
+
+	  raise(SIGSEGV);
+	  
 	case 'p':
 	  if(verboseflag){
 	    fprintf(stdout,"--pipe\n");
@@ -261,7 +270,7 @@ int main (int argc, char **argv) {
 
   for (int k = 0; k < numberOfFDs; k++)
     {
-      printf("%d",validFDs[k]);
+      //printf("%d",validFDs[k]);
     }
   
   return 0;
