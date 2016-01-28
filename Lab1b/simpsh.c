@@ -300,7 +300,15 @@ int main (int argc, char **argv) {
 	  verboseflag = true;
 	  break;
 
+	case 'z': // this is --wait
+	  if (verboseflag) {
+	    fprintf(stdout, "--wait");
+	  }
 
+	  
+	  break;
+
+	  
 	  /*
 	    ====================
 	    ====Signal Stuff====
@@ -309,7 +317,7 @@ int main (int argc, char **argv) {
 
 	case 'g': // catch
 	  break;
-	  
+
 	case -1:
 	  break;
 

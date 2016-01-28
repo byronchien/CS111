@@ -24,6 +24,7 @@ static struct option long_options[] = {
   {"wronly", required_argument, 0, 'w'},
   {"excl", no_argument, 0, 'x'},
   {"sync", no_argument, 0, 'y'},
+  {"wait", no_argument, 0, 'z'},
   {0,0,0,0}
 };
 
