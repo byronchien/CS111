@@ -170,6 +170,7 @@ int main (int argc, char **argv) {
 	  //printf("RDONLY fd: %d\n", fdtemp1);
 	  break;
 	  END OF EXAMPLE */
+
 	case 'c':
 	  if(verboseflag){
 	    fprintf(stdout,"--command");
@@ -286,6 +287,16 @@ int main (int argc, char **argv) {
 	  verboseflag = true;
 	  break;
 
+
+	  /*
+	    ====================
+	    ====Signal Stuff====
+	    ====================
+	   */
+
+	case 'g': // catch
+	  break;
+	  
 	case -1:
 	  break;
 

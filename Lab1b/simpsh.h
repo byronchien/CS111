@@ -3,25 +3,26 @@
 
 // array of options
 static struct option long_options[] = {
-  {"rdonly", required_argument, 0, 'r'},
-  {"wronly", required_argument, 0, 'w'},
-  {"rdwr", required_argument, 0, 'd'},
-  {"command", required_argument, 0, 'c'},
-  {"close", required_argument, 0, 'l'},
-  {"verbose", no_argument, 0, 'v'},
-  {"pipe", no_argument, 0, 'p'},
-  {"abort", no_argument, 0, 'b'}
   {"append", no_argument, 0, 'a'},
+  {"abort", no_argument, 0, 'b'},
+  {"command", required_argument, 0, 'c'},
+  {"rdwr", required_argument, 0, 'd'},
   {"cloexec", no_argument, 0, 'e'},
-  {"creat", no_argument, 0, 't'},
-  {"directory", no_argument, 0, 'i'},
-  {"dsync", no_argument, 0, 's'},
-  {"excl", no_argument, 0, 'x'},
-  {"nofollow", no_argument, 0, 'o'},
-  {"nonblock", no_argument, 0, 'n'},
+  {"catch", required_argument, 0, 'g'},
   {"rsync", no_argument, 0, 'h'},
-  {"sync", no_argument, 0, 'y'},
+  {"directory", no_argument, 0, 'i'},
   {"trunc", no_argument, 0, 'k'},
+  {"close", required_argument, 0, 'l'},
+  {"nonblock", no_argument, 0, 'n'},
+  {"nofollow", no_argument, 0, 'o'},
+  {"pipe", no_argument, 0, 'p'},
+  {"rdonly", required_argument, 0, 'r'},  
+  {"dsync", no_argument, 0, 's'},
+  {"creat", no_argument, 0, 't'},
+  {"verbose", no_argument, 0, 'v'},
+  {"wronly", required_argument, 0, 'w'},
+  {"excl", no_argument, 0, 'x'},
+  {"sync", no_argument, 0, 'y'},
   {0,0,0,0}
 };
 
