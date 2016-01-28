@@ -11,6 +11,12 @@
 
 bool verboseflag = false;
 
+
+void catch_handler(int signum, siginfo_t *s, void *args) {
+  fprintf(stderr, "Caught signal %d\n", signum);
+  exit(signum);
+}
+
 int main (int argc, char **argv) {
   int c;
   int highestFileDescriptor = 2;
@@ -99,7 +105,7 @@ int main (int argc, char **argv) {
 	  
 	case 'b':
 	  if (verboseflag) {
-	    fprintf(stdout,"--abort");
+	    fprintf(stdout,"--abort\n");
 	  }
 
 	  raise(SIGSEGV);
@@ -114,7 +120,7 @@ int main (int argc, char **argv) {
 	  int check = pipe(pipeArgs);
 
 	  if(check < 0) {
-	    fprintf(stderr,"error creating pipe");
+	    fprintf(stderr,"Error creating pipe\n");
 	    break;
 	  }
 
@@ -179,7 +185,7 @@ int main (int argc, char **argv) {
 	  _commands = realloc(_commands, ncmds*sizeof(command_info));
 
 	  if(verboseflag){
-	    fprintf(stdout,"--command");
+	    fprintf(stdout,"--command\n");
 
 	    // loop through all the arguments and print them until a
 	    // null byte or another long option is encountered
@@ -316,8 +322,34 @@ int main (int argc, char **argv) {
 	   */
 
 	case 'g': // catch
+	  ;struct sigaction sa;
+	  sa.sa_sigaction = catch_handler;
+	  int sig = atoi(optarg);
+	  if (sig < 0) {
+	    fprintf(stderr, "Invalid signal number\n");
+	    break;
+	  }
+	  sigaction(sig, &sa, NULL);
 	  break;
 
+	case 'f': // ignore
+	  ;int si = atoi(optarg);
+	  if ( si < 0 ) {
+	    fprintf(stderr, "Invalid signal number\n");
+	    break;
+	  }
+	  signal(si, SIG_IGN);
+	  break;
+
+	case 'j': // default
+	  ;int s = atoi(optarg);
+	  if ( s < 0 ) {
+	    fprintf(stderr, "Invalid signal number\n");
+	    break;
+	  }
+	  signal(s, SIG_DFL);
+	  break;
+	  
 	case -1:
 	  break;
 
@@ -336,3 +368,4 @@ int main (int argc, char **argv) {
   return 0;
 
 }
+
