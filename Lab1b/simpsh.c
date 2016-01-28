@@ -1,3 +1,4 @@
+#include "simpsh.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -18,9 +19,12 @@ int main (int argc, char **argv) {
   int highestFileDescriptor = 2;
   int numberOfFDs = 0;
   int* validFDs = NULL;
+  int oflags = 0;
 
   while (1)
     {
+<<<<<<< HEAD
+=======
       // array of options
       static struct option long_options[] = {
 	{"rdonly",required_argument, 0, 'r'},
@@ -33,6 +37,7 @@ int main (int argc, char **argv) {
 	{0,0,0,0}
       };
 
+>>>>>>> c9cf420e51ce6313a472d7e9d2220e5a76a12278
       int option_index = 0;
 
       // retrieve the next option; select case based on value returned
@@ -44,6 +49,54 @@ int main (int argc, char **argv) {
       switch(c)
 	{
 	case 'a':
+<<<<<<< HEAD
+	  oflags |= O_APPEND;
+	  break;
+	case 'e':
+	  oflags |= O_CLOEXEC;
+	  break;
+	case 't':
+	  oflags |= O_CREAT;
+	  break;
+	case 'i':
+	  oflags |= O_DIRECTORY;
+	  break;
+	case 's':
+	  oflags |= O_DSYNC;
+	  break;
+	case 'x':
+	  oflags |= O_EXCL;
+	  break;
+	case 'o':
+	  oflags |= O_NOFOLLOW;
+	  break;
+	case 'n':
+	  oflags |= O_NONBLOCK;
+	  break;
+	case 'h':
+	  oflags |= O_RSYNC;
+	  break;
+	case 'y':
+	  oflags |= O_SYNC;
+	  break;
+	case 'k':
+	  oflags |= O_TRUNC;
+	  break;
+	case 'r':
+	case 'w':
+	case 'd':
+	  if (c == 'r') {
+	    oflags |= O_RDONLY;
+	    if(verboseflag) fprintf(stdout, "--rdonly %s\n", optarg);
+	  }
+	  else if (c == 'w') {
+	    oflags |= O_WRONLY;
+	    if(verboseflag) fprintf(stdout, "--wronly %s\n", optarg);
+	  }
+	  else if (c == 'd') {
+	    oflags |= O_RDWR;
+	    if(verboseflag) fprintf(stdout, "--rdwr %s\n", optarg);
+=======
 	  if (verboseflag) {
 	    fprintf(stdout,"--abort");
 	  }
@@ -53,41 +106,25 @@ int main (int argc, char **argv) {
 	case 'p':
 	  if(verboseflag){
 	    fprintf(stdout,"--pipe\n");
+>>>>>>> c9cf420e51ce6313a472d7e9d2220e5a76a12278
 	  }
 
-	  int pipeArgs[2];
-
-	  int check = pipe(pipeArgs);
-
-	  if(check < 0) {
-	    fprintf(stderr,"error creating pipe");
+	  
+	  int tempfd = open(optarg, oflags, MODE);
+	  if(tempfd < 0) {
+	    fprintf(stderr, "Invalid argument.\n");
 	    break;
 	  }
 
-	  numberOfFDs += 2;
+	  numberOfFDs++;
 	  validFDs = realloc(validFDs, numberOfFDs*sizeof(int));
 	  validFDs[numberOfFDs - 1] = 1;
-	  validFDs[numberOfFDs - 2] = 1;
-	  highestFileDescriptor += 2;
+	  highestFileDescriptor++;
 	  break;
-	  
-	case 'l':
-	  if(verboseflag){
-	    fprintf(stdout,"--close %s\n",optarg);
-	  }
 
-	  int fd = atoi(optarg);
+	  /* EXAMPLE WITH COMMENTS
 
-	  if (fd >= numberOfFDs) {
-	    fprintf(stderr,"invalid argument; file descriptor too large");
-	  }
-
-	  validFDs[fd] = 0;
-	  break;
 	case 'r':
-	  if(verboseflag){
-	    fprintf(stdout,"--rdonly %s\n",optarg);
-	  }
 	  
 	  // optarg is the argument immediately following the option
 	  // argv[optind] points to the next argument
@@ -117,34 +154,43 @@ int main (int argc, char **argv) {
 	  //printf("RDONLY fd: %d\n", fdtemp1);
 	  break;
 
-	case 'w':
+	  END OF EXAMPLE.  */
+	  
+	case 'p':
 	  if(verboseflag){
-	    fprintf(stdout,"--wronly %s\n",optarg);
+	    fprintf(stdout,"--pipe\n");
+	  }
+	  
+	  int pipeArgs[2];
+
+	  int check = pipe(pipeArgs);
+
+	  if(check < 0) {
+	    fprintf(stderr,"error creating pipe");
+	    break;
 	  }
 
-	  // same as for --rdonly
-	  int fdtemp2 = open(optarg, O_WRONLY);
-	  //printf("WRONLY fd: %d\n", fdtemp2);
-
-	  // same as for --rdonly; checks for a valid file descriptor
-	  if (fdtemp2 == -1)
-	    {
-	      fprintf(stderr, "invalid argument to --wronly");
-	      break;
-	    }
-
-  	  //increment the number of file descriptors
-	  //reallocate the array of file descriptors for the new index and
-	  //set the new element to 1
-	  numberOfFDs++;
+	  numberOfFDs += 2;
 	  validFDs = realloc(validFDs, numberOfFDs*sizeof(int));
 	  validFDs[numberOfFDs - 1] = 1;
-
-	  
- 	  highestFileDescriptor++;
-	  
+	  validFDs[numberOfFDs - 2] = 1;
+	  highestFileDescriptor += 2;
 	  break;
+	  
+	case 'l':
+	  if(verboseflag){
+	    fprintf(stdout,"--close %s\n",optarg);
+	  }
 
+	  int fd = atoi(optarg);
+
+	  if (fd >= numberOfFDs) {
+	    fprintf(stderr,"invalid argument; file descriptor too large");
+	  }
+
+	  validFDs[fd] = 0;
+	  break;
+	  
 	case 'c':
 	  if(verboseflag){
 	    fprintf(stdout,"--command");
