@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <sys/stat.h>
 
 // array of options
 static struct option long_options[] = {
@@ -9,6 +10,7 @@ static struct option long_options[] = {
   {"close", required_argument, 0, 'l'},
   {"verbose", no_argument, 0, 'v'},
   {"pipe", no_argument, 0, 'p'},
+  {"abort", no_argument, 0, 'b'}
   {"append", no_argument, 0, 'a'},
   {"cloexec", no_argument, 0, 'e'},
   {"creat", no_argument, 0, 't'},

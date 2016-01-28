@@ -17,7 +17,7 @@ int main (int argc, char **argv) {
   int numberOfFDs = 0;
   int* validFDs = NULL;
   int oflags = 0;
-  
+
   while (1)
     {
       int option_index = 0;
@@ -63,7 +63,7 @@ int main (int argc, char **argv) {
 	case 'k':
 	  oflags |= O_TRUNC;
 	  break;
-        case 'r':
+	case 'r':
 	case 'w':
 	case 'd':
 	  if (c == 'r') {
@@ -78,34 +78,46 @@ int main (int argc, char **argv) {
 	    oflags |= O_RDWR;
 	    if(verboseflag) fprintf(stdout, "--rdwr %s\n", optarg);
 	  }
+	  
+	  /* EXAMPLE WITH COMMENTS
 
-	  int tempfd = open(optarg, oflags, MODE);
-	  if (tempfd == -1) {
-	    fprintf(stderr, "Invalid argument for file.\n");
-	    break;
-	  }
+	case 'r':
+	  
+	  // optarg is the argument immediately following the option
+	  // argv[optind] points to the next argument
+	  
+	  // fdtemp contains the file descriptor for the argument passed in
+	  // optarg points to the argument immediately following the option
+	  int fdtemp1 = open(optarg,O_RDONLY);
 
+	  // check to see whether open returned a valid file descriptor
+	  // otherwise throw an error
+	  if (fdtemp1  == -1)
+	    {
+	      fprintf(stderr, "invalid argument to --rdonly");
+	      break;
+	    }
+
+
+	  //increment the number of file descriptors
+	  //reallocate the array of file descriptors for the new index and
+	  //set the new element to 1
 	  numberOfFDs++;
-	  validFDs = realloc(validFDs, numberOfFDs * sizeof(int));
+	  validFDs = realloc(validFDs, numberOfFDs*sizeof(int));
 	  validFDs[numberOfFDs - 1] = 1;
 
+	  
 	  highestFileDescriptor++;
-	  oflags = 0;
+	  //printf("RDONLY fd: %d\n", fdtemp1);
 	  break;
 
-	  
-	case 'b':
-	  if (verboseflag) {
-	    fprintf(stdout,"--abort");
-	  }
-
-	  raise(SIGSEGV);
+	  END OF EXAMPLE.  */
 	  
 	case 'p':
 	  if(verboseflag){
 	    fprintf(stdout,"--pipe\n");
 	  }
-
+	  
 	  int pipeArgs[2];
 
 	  int check = pipe(pipeArgs);
@@ -135,41 +147,7 @@ int main (int argc, char **argv) {
 
 	  validFDs[fd] = 0;
 	  break;
-
-	  /*  OLD EXMAPLE (left here for comments)
-	case 'r':
-	  if(verboseflag){
-	    fprintf(stdout,"--rdonly %s\n",optarg);
-	  }
 	  
-	  // optarg is the argument immediately following the option
-	  // argv[optind] points to the next argument
-	  
-	  // fdtemp contains the file descriptor for the argument passed in
-	  // optarg points to the argument immediately following the option
-	  int fdtemp1 = open(optarg,O_RDONLY);
-
-	  // check to see whether open returned a valid file descriptor
-	  // otherwise throw an error
-	  if (fdtemp1  == -1)
-	    {
-	      fprintf(stderr, "invalid argument to --rdonly");
-	      break;
-	    }
-
-
-	  //increment the number of file descriptors
-	  //reallocate the array of file descriptors for the new index and
-	  //set the new element to 1
-	  numberOfFDs++;
-	  validFDs = realloc(validFDs, numberOfFDs*sizeof(int));
-	  validFDs[numberOfFDs - 1] = 1;
-
-	  
-	  highestFileDescriptor++;
-	  //printf("RDONLY fd: %d\n", fdtemp1);
-	  break;
-	  END OF EXAMPLE */
 	case 'c':
 	  if(verboseflag){
 	    fprintf(stdout,"--command");
@@ -272,7 +250,6 @@ int main (int argc, char **argv) {
 	    
 	    // free the dynamically allocated array of arguments
 	    free(args);
-	    free(validFDs);
 
 	    exit(0);
 	  }
@@ -298,7 +275,7 @@ int main (int argc, char **argv) {
     {
       //printf("%d",validFDs[k]);
     }
-  free(validFDs);
+  
   return 0;
 
 }

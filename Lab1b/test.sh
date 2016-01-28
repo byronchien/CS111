@@ -91,8 +91,8 @@ else
 fi
 
 
-printf "invalid argument to --rdonly" > 4temp
-printf "invalid argument to --wronly" > 6temp
+printf "Invalid argument for file.\n" > 4temp
+printf "Invalid argument for file.\n" > 6temp
 
 ./simpsh \
     --rdonly --wronly 2> 5temp
