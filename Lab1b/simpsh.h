@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 // array of options
 static struct option long_options[] = {
@@ -25,5 +26,13 @@ static struct option long_options[] = {
   {"sync", no_argument, 0, 'y'},
   {0,0,0,0}
 };
+
+struct command_info{
+  pid_t c_pid; // pid of corresponding forked process
+  int s_index; // starting index of arguments
+  int nargs; // number of arguments
+};
+
+typedef struct command_info command_info;
 
 const mode_t MODE = 0644;

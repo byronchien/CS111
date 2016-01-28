@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-bool verboseflag = false;;
+bool verboseflag = false;
 
 int main (int argc, char **argv) {
   int c;
@@ -17,6 +17,9 @@ int main (int argc, char **argv) {
   int numberOfFDs = 0;
   int* validFDs = NULL;
   int oflags = 0;
+
+  command_info* _commands = NULL;
+  int ncmds = 0;
   
   while (1)
     {
@@ -172,6 +175,9 @@ int main (int argc, char **argv) {
 	  END OF EXAMPLE */
 
 	case 'c':
+	  ncmds++;
+	  _commands = realloc(_commands, ncmds*sizeof(command_info));
+
 	  if(verboseflag){
 	    fprintf(stdout,"--command");
 
@@ -225,6 +231,9 @@ int main (int argc, char **argv) {
 	  // loop until a long option or a null byte is encountered
 	  int n_args = 0;
 	  int t_optind = optind;
+
+	  _commands[ncmds - 1].s_index = optind;
+	  
 	  while(1) {
 	    if (argv[t_optind] == NULL) break;
 	    if (argv[t_optind][0] == '-' && argv[t_optind][1] == '-') break;
@@ -232,6 +241,8 @@ int main (int argc, char **argv) {
 	    t_optind++;
 	  }
 
+	  _commands[ncmds - 1].nargs = n_args;
+	  
 	  pid_t pid = fork();
 
 	  if (pid == 0){ //child process
@@ -274,11 +285,13 @@ int main (int argc, char **argv) {
 	    // free the dynamically allocated array of arguments
 	    free(args);
 	    free(validFDs);
+	    free(_commands);
 
 	    exit(0);
 	  }
 	  else { //parent process
-	   
+	    _commands[ncmds - 1].c_pid = pid;
+	    
 	    break;
 	  }
 	  break;
@@ -309,7 +322,9 @@ int main (int argc, char **argv) {
     {
       //printf("%d",validFDs[k]);
     }
+  
   free(validFDs);
+  free(_commands);
   return 0;
 
 }
