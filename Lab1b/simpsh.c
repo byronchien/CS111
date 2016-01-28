@@ -247,6 +247,7 @@ int main (int argc, char **argv) {
 	    
 	    // free the dynamically allocated array of arguments
 	    free(args);
+	    free(validFDs);
 
 	    exit(0);
 	  }
@@ -272,7 +273,7 @@ int main (int argc, char **argv) {
     {
       //printf("%d",validFDs[k]);
     }
-  
+  free(validFDs);
   return 0;
 
 }
