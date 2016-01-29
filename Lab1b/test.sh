@@ -203,7 +203,7 @@ printf "over\nthe\nlazy\ndog\n" > 7temp
     --command 3 5 6 tr A-Z a-z \
     --command 0 2 6 sort \
     --command 1 4 6 cat 7temp - \
-    --wait
+    --wait > 8temp
 
 printf "0 tr A-Z a-z\n0 sort\n0 cat 7temp -\n" > 9temp
 
@@ -211,8 +211,8 @@ if diff 8temp 9temp >/dev/null ; then
     echo "Passed wait test"
 else
     echo "Failed wait test"
-#    rm *temp
-    exit
+    rm *temp
+    exit 
 fi
 
 

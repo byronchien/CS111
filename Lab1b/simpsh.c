@@ -323,14 +323,18 @@ int main (int argc, char **argv) {
 	    fprintf(stdout, "--wait\n");
 	  }
 
+	  for (int k =0; k < numberOfFDs;k++)
+	    {
+	      close(k+3);
+	    }
+	  
 	  for (int k = 0; k < ncmds; k++)
 	    {
+
 	      int status = 0;
 
 	      waitpid(_commands[k].c_pid, &status, 0 );
 
-	      fprintf(stdout,"%s",_commands[k].s_ptr[0]);
-	      
 	      if (WIFEXITED(status))
 		{
 		  fprintf(stdout,"%d ", WEXITSTATUS(status));
@@ -338,14 +342,17 @@ int main (int argc, char **argv) {
 	      else
 		{
 		  fprintf(stdout,"\nDid not exit properly\n");
+		  continue;
 		}
 
+	      fprintf(stdout,"%s",_commands[k].s_ptr[0]);
+	      
 	      for (int i = 1; i < _commands[k].nargs; i++)
 		{
 		  fprintf(stdout," %s",_commands[k].s_ptr[i]);
 		}
 
-	      
+	      fprintf(stdout,"\n");
 	    }
 	  break;
 
