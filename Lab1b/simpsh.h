@@ -32,7 +32,7 @@ static struct option long_options[] = {
 
 struct command_info{
   pid_t c_pid; // pid of corresponding forked process
-  int s_index; // starting index of arguments
+  char** s_ptr; // starting index of arguments
   int nargs; // number of arguments
 };
 
