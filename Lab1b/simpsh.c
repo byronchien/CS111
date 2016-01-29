@@ -11,10 +11,10 @@
 #include <signal.h>
 
 bool verboseflag = false;
-
+int exitStatus = 0;
 
 void catch_handler(int signum, siginfo_t *s, void *args) {
-  fprintf(stderr, "Caught signal %d\n", signum);
+  fprintf(stderr, "%d caught\n", signum);
   exit(signum);
 }
 
@@ -24,6 +24,7 @@ int main (int argc, char **argv) {
   int numberOfFDs = 0;
   int* validFDs = NULL;
   int oflags = 0;
+
 
   command_info* _commands = NULL;
   int ncmds = 0;
@@ -92,6 +93,7 @@ int main (int argc, char **argv) {
 	  int tempfd = open(optarg, oflags, MODE);
 	  if (tempfd == -1) {
 	    fprintf(stderr, "Invalid argument for file.\n");
+	    exitStatus = 1;
 	    break;
 	  }
 
@@ -122,6 +124,7 @@ int main (int argc, char **argv) {
 
 	  if(check < 0) {
 	    fprintf(stderr,"Error creating pipe\n");
+	    exitStatus = 1;
 	    break;
 	  }
 
@@ -141,6 +144,7 @@ int main (int argc, char **argv) {
 
 	  if (fd >= numberOfFDs) {
 	    fprintf(stderr,"invalid argument; file descriptor too large");
+	    exitStatus = 1;
 	  }
 
 	  validFDs[fd] = 0;
@@ -211,18 +215,24 @@ int main (int argc, char **argv) {
 	  // optind is decremented since optind is set to the second
 	  // argument initially rather than the first
 	  optind--;
+	  bool shouldI = 1;
 	  for (int i = 0; i < 3; i++){
 	    const char** ERR = NULL;
 	    newFileDs[i] = atoi(argv[optind]);
-	    
-	    if (newFileDs[i] < 0 || newFileDs[i] > highestFileDescriptor)
+
+	    //	    printf("HEY BYRONE!!\n\n\n HIGHEST FD: %d\n\n\n", highestFileDescriptor);
+	    if (newFileDs[i] < 0 || newFileDs[i] > highestFileDescriptor - 3)
 	      {
 		fprintf (stderr,"invalid file descriptor %d\n", newFileDs[i]);
+		exitStatus = 1;
+		shouldI = 0;
 		break;
 	      }
 	    else if (validFDs[newFileDs[i]] == 0)
 	      {
 		fprintf (stderr,"error: accessing closed file (descriptor %d)\n",newFileDs[i]+3);
+		exitStatus = 1;
+		shouldI = 0;
 		break;
 	      }
 	    else {
@@ -233,13 +243,16 @@ int main (int argc, char **argv) {
 	    optind++;
 	  }
 
+	  if(!shouldI)
+	    break;
+	  
 	  // count the number of arguments for the command to be run
 	  // set a temporary variable to the index of the command and
 	  // loop until a long option or a null byte is encountered
 	  int n_args = 0;
 	  int t_optind = optind;
 
-	  while(1) {
+	  while(shouldI) {
 	    if (argv[t_optind] == NULL) break;
 	    if (argv[t_optind][0] == '-' && argv[t_optind][1] == '-') break;
 	    n_args++;
@@ -274,6 +287,7 @@ int main (int argc, char **argv) {
 		int j = close(k + 3);
 		if (j != 0 ) {
 		  fprintf(stderr,"error closing file descriptor %d\n",k);
+		  exitStatus = 1;
 		  abort();
 		}
 	      }
@@ -338,6 +352,8 @@ int main (int argc, char **argv) {
 	      if (WIFEXITED(status))
 		{
 		  fprintf(stdout,"%d ", WEXITSTATUS(status));
+		  if(WEXITSTATUS(status) > exitStatus)
+		    exitStatus = WEXITSTATUS(status);
 		}
 	      else
 		{
@@ -364,32 +380,51 @@ int main (int argc, char **argv) {
 	   */
 
 	case 'g': // catch
-	  ;struct sigaction sa;
+	  if (verboseflag) {
+	    fprintf(stdout, "--catch %d\n", atoi(optarg));
+	  }
+	  struct sigaction sa;
 	  sa.sa_sigaction = catch_handler;
 	  int sig = atoi(optarg);
 	  if (sig < 0) {
 	    fprintf(stderr, "Invalid signal number\n");
+	    exitStatus = 1;
 	    break;
 	  }
 	  sigaction(sig, &sa, NULL);
 	  break;
 
 	case 'f': // ignore
-	  ;int si = atoi(optarg);
+	  if (verboseflag) {
+	    fprintf(stdout, "--ignore %d\n", atoi(optarg));
+	  }
+	  int si = atoi(optarg);
 	  if ( si < 0 ) {
 	    fprintf(stderr, "Invalid signal number\n");
+	    exitStatus = 1;
 	    break;
 	  }
 	  signal(si, SIG_IGN);
 	  break;
 
 	case 'j': // default
-	  ;int s = atoi(optarg);
+	  if (verboseflag) {
+	    fprintf(stdout, "--ignore %d\n", atoi(optarg));
+	  }
+	  int s = atoi(optarg);
 	  if ( s < 0 ) {
 	    fprintf(stderr, "Invalid signal number\n");
+	    exitStatus = 1;
 	    break;
 	  }
 	  signal(s, SIG_DFL);
+	  break;
+
+	case 'u':
+	  if (verboseflag) {
+	    fprintf(stdout, "--pause\n");
+	  }
+	  pause();
 	  break;
 	  
 	case -1:
@@ -413,7 +448,7 @@ int main (int argc, char **argv) {
     }
   
   free(_commands);
-  return 0;
+  exit(exitStatus);
 
 }
 

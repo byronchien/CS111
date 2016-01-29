@@ -22,6 +22,7 @@ static struct option long_options[] = {
   {"rdonly", required_argument, 0, 'r'},  
   {"dsync", no_argument, 0, 's'},
   {"creat", no_argument, 0, 't'},
+  {"pause", no_argument, 0, 'u'},
   {"verbose", no_argument, 0, 'v'},
   {"wronly", required_argument, 0, 'w'},
   {"excl", no_argument, 0, 'x'},

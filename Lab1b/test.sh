@@ -183,7 +183,7 @@ fi
 rm *temp
 echo ""
 
-# Round 4: pipes
+# Round 4: pipes and wait
 echo "Starting round 4 of testing."
 
 touch 0temp
@@ -213,6 +213,22 @@ else
     echo "Failed wait test"
     rm *temp
     exit 
+fi
+
+./simpsh \
+    --rdonly 0temp \
+    --wronly 5temp \
+    --close 0 \
+    --command 0 1 1 cat 2> 5temp
+
+printf "error: accessing closed file (descriptor 3)\n" > 9temp;
+
+if diff 5temp 9temp >/dev/null ; then
+    echo "Passed close test"
+else
+    echo "Failed close test"
+    rm *temp
+    exit
 fi
 
 
