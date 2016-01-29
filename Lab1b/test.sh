@@ -124,7 +124,6 @@ else
     exit
 fi
 
-echo "Passed all tests."
 rm *temp
 
 echo ""
@@ -147,20 +146,11 @@ printf "test! test! test! " > 6temp
 
 ./simpsh \
     --verbose \
-    --creat \
-    --rdwr 0temp \
-    --trunc \
-    --nofollow \
-    --sync \
-    --rdonly 1temp \
-    --nonblock \
-    --append \
-    --rsync \
-    --rdonly 2temp \
-    --append \
-    --rdwr 3temp \
-    --append \
-    --wronly 4temp \
+    --creat --rdwr 0temp \
+    --trunc --nofollow --sync --rdonly 1temp \
+    --nonblock --append --rsync --rdonly 2temp \
+    --append --rdwr 3temp \
+    --append --wronly 4temp \
     --rdonly 5temp \
     --command 2 0 4 cat \
     --command 5 3 4 cat \
@@ -193,5 +183,84 @@ fi
 rm *temp
 echo ""
 
+# Round 4: pipes
+echo "Starting round 4 of testing."
+
+touch 0temp
+touch 5temp
+touch 6temp # stderr
+touch 7temp
+
+printf "the\nquick\nbrown\nfox\njumps\n" > 0temp
+printf "over\nthe\nlazy\ndog\n" > 7temp
+
+./simpsh \
+    --rdonly 0temp \
+    --pipe \
+    --pipe \
+    --creat --trunc --wronly 5temp \
+    --creat --append --wronly 6temp \
+    --command 3 5 6 tr A-Z a-z \
+    --command 0 2 6 sort \
+    --command 1 4 6 cat 7temp -
+
+rm *temp
+
+echo ""
+
+# Round 5: signals
+echo "Starting round 5 of testing."
+
+touch 0temp
+touch 1temp
+touch 2temp
+touch 3temp
+touch 4temp
+
+fprint "This better not be in 1temp!!" > 0temp
+
+./simpsh \
+    --verbose \
+    --rdonly 0temp \
+    --wronly 1temp \
+    --wronly 2temp \
+    --catch 11 \
+    --abort \
+    --command cat 0 2 - \
+    --default 11 \
+    --ignore 11 \
+    --abort \
+    --command cat 0 3 - \
+    --default 11 \
+    --abort \
+    --command cat 0 1 -
+
+
+if diff 0temp 2temp >/dev/null ; then
+    echo "Passed first test."
+else
+    echo "Failed first test."
+    rm *temp
+    exit
+fi
+	  
+if diff 0temp 3temp >/dev/null ; then
+    echo "Passed second test."
+else
+    echo "Failed second test."
+    rm *temp
+    exit
+fi
+
+if diff 1temp 4temp >/dev/null ; then
+    echo "Passed third test."
+else
+    echo "Failed third test."
+    rm *temp
+    exit
+fi
+rm *temp
+
+echo ""
 
 echo "Passed all tests!"
