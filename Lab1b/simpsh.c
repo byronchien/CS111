@@ -331,19 +331,20 @@ int main (int argc, char **argv) {
 
 	      fprintf(stdout,"%s",_commands[k].s_ptr[0]);
 	      
-	      for (int i = 1; i < _commands[k].nargs; i++)
-		{
-		  fprintf(stdout," %s",_commands[k].s_ptr[i]);
-		}
-
 	      if (WIFEXITED(status))
 		{
-		  fprintf(stdout,"\nExit Status: %d\n", WEXITSTATUS(status));
+		  fprintf(stdout,"%d\n", WEXITSTATUS(status));
 		}
 	      else
 		{
 		  fprintf(stdout,"\nDid not exit properly\n");
 		}
+
+	      for (int i = 1; i < _commands[k].nargs; i++)
+		{
+		  fprintf(stdout," %s",_commands[k].s_ptr[i]);
+		}
+
 	      
 	    }
 	  break;
