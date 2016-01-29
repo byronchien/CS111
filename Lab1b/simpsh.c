@@ -333,7 +333,7 @@ int main (int argc, char **argv) {
 	      
 	      if (WIFEXITED(status))
 		{
-		  fprintf(stdout,"%d\n", WEXITSTATUS(status));
+		  fprintf(stdout,"%d ", WEXITSTATUS(status));
 		}
 	      else
 		{
