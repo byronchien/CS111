@@ -202,7 +202,19 @@ printf "over\nthe\nlazy\ndog\n" > 7temp
     --creat --append --wronly 6temp \
     --command 3 5 6 tr A-Z a-z \
     --command 0 2 6 sort \
-    --command 1 4 6 cat 7temp -
+    --command 1 4 6 cat 7temp - \
+    --wait
+
+printf "0 tr A-Z a-z\n0 sort\n0 cat 7temp -\n" > 9temp
+
+if diff 8temp 9temp >/dev/null ; then
+    echo "Passed wait test"
+else
+    echo "Failed wait test"
+#    rm *temp
+    exit
+fi
+
 
 rm *temp
 
@@ -216,24 +228,30 @@ touch 1temp
 touch 2temp
 touch 3temp
 touch 4temp
+touch 5temp
+touch 6temp
 
-fprint "This better not be in 1temp!!" > 0temp
+printf "This better not be in 1temp!!" > 0temp
+cat 0temp > 5temp
+cat 0temp > 6temp
 
 ./simpsh \
     --verbose \
     --rdonly 0temp \
     --wronly 1temp \
     --wronly 2temp \
-    --catch 11 \
-    --abort \
-    --command cat 0 2 - \
-    --default 11 \
+    --wronly 3temp \
+    --wronly 4temp \
+    --rdonly 5temp \
+    --rdonly 6temp \
+    --command 0 2 4 cat \
     --ignore 11 \
     --abort \
-    --command cat 0 3 - \
+    --command 5 3 4 cat \
     --default 11 \
+    --catch 11 \
     --abort \
-    --command cat 0 1 -
+    --command 6 1 4 cat
 
 
 if diff 0temp 2temp >/dev/null ; then
