@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -26,7 +27,7 @@ int main (int argc, char **argv) {
 
   command_info* _commands = NULL;
   int ncmds = 0;
-  
+
   while (1)
     {
       int option_index = 0;
@@ -238,8 +239,6 @@ int main (int argc, char **argv) {
 	  int n_args = 0;
 	  int t_optind = optind;
 
-	  _commands[ncmds - 1].s_index = optind;
-	  
 	  while(1) {
 	    if (argv[t_optind] == NULL) break;
 	    if (argv[t_optind][0] == '-' && argv[t_optind][1] == '-') break;
@@ -247,6 +246,19 @@ int main (int argc, char **argv) {
 	    t_optind++;
 	  }
 
+	  _commands[ncmds - 1].s_ptr = malloc(sizeof(char*)*n_args);
+
+	  t_optind = optind;
+	  int _index = 0;
+	  while(1) {
+	    if (argv[t_optind] == NULL) break;
+	    if (argv[t_optind][0] == '-' && argv[t_optind][1] == '-') break;
+	    _commands[ncmds - 1].s_ptr[_index] = argv[t_optind];
+
+	    _index++;
+	    t_optind++;
+	  }
+	  
 	  _commands[ncmds - 1].nargs = n_args;
 	  
 	  pid_t pid = fork();
@@ -308,10 +320,33 @@ int main (int argc, char **argv) {
 
 	case 'z': // this is --wait
 	  if (verboseflag) {
-	    fprintf(stdout, "--wait");
+	    fprintf(stdout, "--wait\n");
 	  }
 
-	  
+	  for (int k = 0; k < ncmds; k++)
+	    {
+	      int status = 0;
+
+	      waitpid(_commands[k].c_pid, &status, 0 );
+
+	      fprintf(stdout,"%s",_commands[k].s_ptr[0]);
+	      
+	      if (WIFEXITED(status))
+		{
+		  fprintf(stdout,"%d ", WEXITSTATUS(status));
+		}
+	      else
+		{
+		  fprintf(stdout,"\nDid not exit properly\n");
+		}
+
+	      for (int i = 1; i < _commands[k].nargs; i++)
+		{
+		  fprintf(stdout," %s",_commands[k].s_ptr[i]);
+		}
+
+	      
+	    }
 	  break;
 
 	  
@@ -364,6 +399,12 @@ int main (int argc, char **argv) {
     }
   
   free(validFDs);
+
+  for (int k = 0; k < ncmds; k++)
+    {
+      free(_commands[k].s_ptr);
+    }
+  
   free(_commands);
   return 0;
 
