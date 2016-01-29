@@ -185,7 +185,7 @@ int main (int argc, char **argv) {
 	  _commands = realloc(_commands, ncmds*sizeof(command_info));
 
 	  if(verboseflag){
-	    fprintf(stdout,"--command\n");
+	    fprintf(stdout,"--command");
 
 	    // loop through all the arguments and print them until a
 	    // null byte or another long option is encountered

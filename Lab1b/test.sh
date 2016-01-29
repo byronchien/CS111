@@ -1,7 +1,10 @@
 #!/bin/bash
 # Test cases
 
-# Normal behavior
+# Round 1: read, write, commands
+echo ""
+echo "Starting round 1 of testing."
+
 touch 0temp
 touch 1temp
 touch 2temp
@@ -44,14 +47,14 @@ else
     exit
 fi
 
-echo "Passed all tests."
 rm *temp
 rm 0ans
 
+echo ""
 
+# Round 2: read, write error checking
+echo "Starting round 2 of testing."
 
-# Round 2
-# Error checking
 touch 0temp
 touch 1temp
 touch 2temp
@@ -123,3 +126,72 @@ fi
 
 echo "Passed all tests."
 rm *temp
+
+echo ""
+
+# Round 3: oflags
+echo "Starting round 3 of testing."
+
+touch 1temp
+touch 2temp
+touch 3temp
+touch 4temp
+touch 5temp
+touch 6temp
+
+printf "the\nquick\nbrown\nfox\njumps\nover\nthe\nlazy\ndog" > 1temp
+printf "the\nquick\nbrown\nfox\njumps\nover\nthe\nlazy\ndog" > 2temp
+printf "test! " > 3temp
+printf "test! test! " > 5temp
+printf "test! test! test! " > 6temp
+
+./simpsh \
+    --verbose \
+    --creat \
+    --rdwr 0temp \
+    --trunc \
+    --nofollow \
+    --sync \
+    --rdonly 1temp \
+    --nonblock \
+    --append \
+    --rsync \
+    --rdonly 2temp \
+    --append \
+    --rdwr 3temp \
+    --append \
+    --wronly 4temp \
+    --rdonly 5temp \
+    --command 2 0 4 cat \
+    --command 5 3 4 cat \
+    --command 1 1 4 cat
+
+if diff 0temp 2temp >/dev/null ; then
+    echo "Passed first test."
+else
+    echo "Failed first test."
+    rm *temp
+    exit
+fi
+
+if diff 3temp 6temp >/dev/null ; then
+    echo "Passed second test."
+else
+    echo "Failed second test."
+    rm *temp
+    exit
+fi
+
+if diff 1temp 4temp >/dev/null ; then
+    echo "Passed third test."
+else
+    echo "Failed third test."
+    rm *temp
+    exit
+fi
+
+rm *temp
+echo ""
+
+
+echo "Passed all tests!"
