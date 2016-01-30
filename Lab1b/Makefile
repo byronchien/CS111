@@ -10,7 +10,7 @@ all: simpsh
 TESTS = $(wildcard test*.sh)
 TEST_BASES = $(subst .sh,,$(TESTS))
 
-SIMPSH_SOURCES = simpsh.c
+SIMPSH_SOURCES = simpsh.c simpsh.h
 SIMPSH_OBJECTS = $(subst .c,.o,$(SIMPSH_SOURCES))
 
 DIST_SOURCES = \
