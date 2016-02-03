@@ -474,7 +474,7 @@ int main (int argc, char **argv) {
 	  sigaction(sig, &sa, NULL);
 
 	  if (profileFlag) {
-	    getrusage(RUSAGE_SELF, &usage);
+	    getrusage(RUSAGE_CHILDREN, &usage);
 	    struct timeval utime = usage.ru_utime;
 	    struct timeval stime = usage.ru_stime;
 	    fprintf(stdout, "--catch %d\n", atoi(optarg));
