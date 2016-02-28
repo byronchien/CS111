@@ -894,7 +894,7 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 		uint32_t offset = (remaining - amount) % OSPFS_BLKSIZE;
 		n = OSPFS_BLKSIZE - offset;
 		// copy_to_user returns 0 on success
-		if(copy_to_user(buffer,	ospfs_block(blockno) + offset, n)) {
+		if(copy_to_user(buffer,	ospfs_inode_data(oi, *f_pos), n)) {
 		  retval = -EFAULT;
 		  goto done;
 		}
@@ -936,10 +936,27 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 	// Support files opened with the O_APPEND flag.  To detect O_APPEND,
 	// use struct file's f_flags field and the O_APPEND bit.
 	/* EXERCISE: Your code here */
+	int append = 0;
+	if (filp->f_flags & O_APPEND)
+	  append = 1;
 
 	// If the user is writing past the end of the file, change the file's
 	// size to accomodate the request.  (Use change_size().)
 	/* EXERCISE: Your code here */
+	if (append) {
+	  int ret = change_size(oi, NEWSIZE???);
+	  if (ret) {
+	    retval = ret;
+	    goto done;
+	  }
+	}
+	else if (count > oi->oi_size - *f_pos) {
+	  int ret = change_size(oi, NEWSIZE???);
+	  if (ret) {
+	    retval = ret;
+	    goto done;
+	  }
+	}
 
 	// Copy data block by block
 	while (amount < count && retval >= 0) {
