@@ -11,14 +11,14 @@
 # information you'd like us to know, please add it at the end of the file.
 
 # Partner 1
-Name: 
-Student ID: 
-Email: 
+Name: Jason Liu
+Student ID: 704452711
+Email: jason.sean.liu@gmail.com
 
 # Partner 2 (if you're working in a team)
-Name: 
-Student ID: 
-Email: 
+Name: Byron Chien
+Student ID: 604449489
+Email: byronc@ucla.edu
 
 # Extra credit problems
 #Extra credit problem: none
