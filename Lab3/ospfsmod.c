@@ -944,14 +944,14 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 	// size to accomodate the request.  (Use change_size().)
 	/* EXERCISE: Your code here */
 	if (append) {
-	  int ret = change_size(oi, NEWSIZE???);
+	  int ret = change_size(oi, oi->oi_size + count);
 	  if (ret) {
 	    retval = ret;
 	    goto done;
 	  }
 	}
 	else if (count > oi->oi_size - *f_pos) {
-	  int ret = change_size(oi, NEWSIZE???);
+	  int ret = change_size(oi, *f_pos + count);
 	  if (ret) {
 	    retval = ret;
 	    goto done;
@@ -976,8 +976,12 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 		// read user space.
 		// Keep track of the number of bytes moved in 'n'.
 		/* EXERCISE: Your code here */
-		retval = -EIO; // Replace these lines
-		goto done;
+		uint32_t offset = (oi->oi_size - *f_pos - amount) % OSPFS_BLKSIZE;
+		n = OSPFS_BLKSIZE - offset;
+		if(copy_from_user(ospfs_inode_data(oi, *f_pos), buffer, n)) {
+		  retval = -EFAULT;
+		  goto done;
+		}
 
 		buffer += n;
 		amount += n;
