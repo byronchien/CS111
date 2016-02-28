@@ -552,7 +552,20 @@ ospfs_unlink(struct inode *dirino, struct dentry *dentry)
 static uint32_t
 allocate_block(void)
 {
-	/* EXERCISE: Your code here */
+	// creates pointer to the free block bitmap located in block 2
+	void * free_block_map = &ospfs_data[OSPFS_FREEMAP_BLK * OSPFS_BLKSIZE];
+
+	// search starts at 3 since 0, 2, and 1 are special blocks
+	// loop iterates until maximum number of blocks
+	for (int i = 3; i < ospfs_super.os_nblocks; i++)
+	{
+		// bitvector_test returns 0 if block is free
+		if (!bitvector_test(free_block_map, i))
+		{
+			bitvector_set(free_block_map, i);
+			return i;
+		}
+	}
 	return 0;
 }
 
@@ -571,7 +584,16 @@ allocate_block(void)
 static void
 free_block(uint32_t blockno)
 {
-	/* EXERCISE: Your code here */
+	// checks if the block number is invalid
+	if (blockno <= ospfs_super.os_firstinob + ospfs_super.os_ninodes
+		|| blockno >= ospfs_super.os_nblocks)
+	{
+		return;
+	}
+
+	void * free_block_map = &ospfs_data[OSPFS_FREEMAP_BLK * OSPFS_BLKSIZE];
+
+	bitvector_clear(free_block_map, blockno);
 }
 
 
