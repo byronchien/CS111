@@ -557,7 +557,7 @@ allocate_block(void)
 
 	// search starts at 3 since 0, 2, and 1 are special blocks
 	// loop iterates until maximum number of blocks
-	for (int i = 3; i < ospfs_super.os_nblocks; i++)
+	for (int i = 3; i < ospfs_super->os_nblocks; i++)
 	{
 		// bitvector_test returns 0 if block is free
 		if (!bitvector_test(free_block_map, i))
@@ -585,8 +585,8 @@ static void
 free_block(uint32_t blockno)
 {
 	// checks if the block number is invalid
-	if (blockno <= ospfs_super.os_firstinob + ospfs_super.os_ninodes
-		|| blockno >= ospfs_super.os_nblocks)
+	if (blockno <= ospfs_super->os_firstinob + ospfs_super->os_ninodes
+		|| blockno >= ospfs_super->os_nblocks)
 	{
 		return;
 	}
