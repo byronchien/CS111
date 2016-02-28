@@ -557,7 +557,8 @@ allocate_block(void)
 
 	// search starts at 3 since 0, 2, and 1 are special blocks
 	// loop iterates until maximum number of blocks
-	for (int i = 3; i < ospfs_super->os_nblocks; i++)
+	int i;
+	for (i = 3; i < ospfs_super->os_nblocks; i++)
 	{
 		// bitvector_test returns 0 if block is free
 		if (!bitvector_test(free_block_map, i))
@@ -867,8 +868,9 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 	// Make sure we don't read past the end of the file!
 	// Change 'count' so we never read past the end of the file.
 	/* EXERCISE: Your code here */
-	if (oi.oi_size - *f_pos > count)
-	  count = oi.oi_size - *f_pos;
+	size_t remaining = oi->oi_size - *f_pos;
+	if (count < remaining)
+	  count = remaining;
 
 	// Copy the data to user block by block
 	while (amount < count && retval >= 0) {
@@ -889,8 +891,13 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 		// into user space.
 		// Use variable 'n' to track number of bytes moved.
 		/* EXERCISE: Your code here */
-		retval = -EIO; // Replace these lines
-		goto done;
+		uint32_t offset = (remaining - amount) % OSPFS_BLKSIZE;
+		n = OSPFS_BLKSIZE - offset;
+		// copy_to_user returns 0 on success
+		if(copy_to_user(buffer,	ospfs_block(blockno) + offset, n)) {
+		  retval = -EFAULT;
+		  goto done;
+		}
 
 		buffer += n;
 		amount += n;
