@@ -629,7 +629,10 @@ free_block(uint32_t blockno)
 static int32_t
 indir2_index(uint32_t b)
 {
-	// Your code here.
+	if (b > 265)
+	{
+		return 0;
+	}
 	return -1;
 }
 
@@ -648,8 +651,15 @@ indir2_index(uint32_t b)
 static int32_t
 indir_index(uint32_t b)
 {
-	// Your code here.
-	return -1;
+	if (b <= 265 && b >= 10)
+	{
+		return 0;
+	}
+	else if (b < 10)
+	{
+		return -1;
+	}
+	return (b - 266)/256;
 }
 
 
@@ -665,8 +675,14 @@ indir_index(uint32_t b)
 static int32_t
 direct_index(uint32_t b)
 {
-	// Your code here.
-	return -1;
+	if (b < 10)
+	{
+		return b;
+	}
+	else
+	{
+		return (b - 10)/256;
+	}
 }
 
 
