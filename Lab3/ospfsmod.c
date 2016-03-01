@@ -630,11 +630,10 @@ free_block(uint32_t blockno)
 static int32_t
 indir2_index(uint32_t b)
 {
-	if (b > 265)
-	{
-		return 0;
-	}
-	return -1;
+	if (b > OSPFS_NINDIRECT + OSPFS_NDIRECT)
+	  return 0;
+	else
+	  return -1;
 }
 
 
@@ -652,15 +651,12 @@ indir2_index(uint32_t b)
 static int32_t
 indir_index(uint32_t b)
 {
-	if (b <= 265 && b >= 10)
-	{
-		return 0;
-	}
-	else if (b < 10)
-	{
-		return -1;
-	}
-	return (b - 266)/256;
+  if (b <= OSPFS_NDIRECT + OSPFS_NINDIRECT && b >= OSPFS_NDIRECT)
+    return 0;
+  else if (b < OSPFS_NDIRECT)
+    return -1;
+  else
+    return (b - OSPFS_NDIRECT + OSPFS_NINDIRECT + 1) / (OSPFS_NINDIRECT + 1);
 }
 
 
@@ -676,14 +672,10 @@ indir_index(uint32_t b)
 static int32_t
 direct_index(uint32_t b)
 {
-	if (b < 10)
-	{
-		return b;
-	}
+	if (b < OSPFS_NDIRECT)
+	  return b;
 	else
-	{
-		return (b - 10)/256;
-	}
+	  return (b - OSPFS_NDIRECT) / (OSPFS_NINDIRECT + 1);
 }
 
 
@@ -728,7 +720,67 @@ add_block(ospfs_inode_t *oi)
 	uint32_t *allocated[2] = { 0, 0 };
 
 	/* EXERCISE: Your code here */
-	return -EIO; // Replace this line
+	uint32_t dirIn = direct_index(n);
+	uint32_t indirIn = indir_index(n);
+	uint32_t indir2In = indir2_index(n);
+
+	// block in direct
+	if (n < OSPFS_NDIRECT) {
+	  if(oi->oi_direct[dirIn] != 0)
+	    return -EIO;
+
+	  allocated[0] = allocate_block();
+	  if(!allocated[0]) { // allocate_block failed
+	    free_block(allocated[0]);
+	    return -ENOSPC;
+	  }
+	  else { // allocate_block succeeded
+	    oi->oi_direct[n] = allocated[0];
+	    oi->oi_size = (n+1) * OSPFS_BLKSIZE;
+	    memset(ospfs_block(allocated[0]), 0, OSPFS_BLKSIZE);
+	    return 0;
+	  }
+	}
+
+	// block in indirect
+	else if (n < OSPFS_NINDIRECT + OSPFS_NDIRECT) {
+	  if (oi_indirect == 0) {
+	    // need to allocate indirect block and new block
+	    allocated[0] = allocate_block();
+	    if(!allocated[0]) {
+	      free_block(allocated[0]);
+	      return -ENOSPC;
+	    }
+	    memset(ospfs_block(allocated[0]), 0, OSPFS_BLKSIZE);
+	    oi->oi_indirect = allocated[0];
+	  }
+	  
+
+	  
+	}
+
+	// block in doubly-indirect
+	else if (!indir2In) {
+	  if (oi_indirect2 == 0) { // if doubly-indirect block not allocated
+	    allocated[0] = allocate_block();
+	    if(!allocated[0]) {
+	      free_block(allocated[0]);
+	      return -ENOSPC;
+	    }
+	    memset(ospfs_block(allocated[0]), 0, OSPFS_BLKSIZE);
+	    oi->oi_indirect2 = allocated[0];
+	  }
+
+	  uint32_t indir = ospfs_block(oi->oi_indirect2);
+	  if(!indir[indirIn]) {
+	    allocated[1] = allocate_block();
+	    if(!allocated[1]) {
+	      free_allocated(allocated[1]);
+	      return -ENOSPC;
+	    }
+	  }
+	  memset(ospfs_block(allocated[1], 0, OSPFS_BLKSIZE);
+	}
 }
 
 
@@ -960,6 +1012,7 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 	// size to accomodate the request.  (Use change_size().)
 	/* EXERCISE: Your code here */
 	if (append) {
+	  *f_pos = oi->oi_size;
 	  int ret = change_size(oi, oi->oi_size + count);
 	  if (ret) {
 	    retval = ret;
