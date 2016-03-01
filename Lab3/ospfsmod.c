@@ -454,7 +454,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 * '.' and '..' entries
 		 */
 		
-		if (f_pos == (dir_oi->oi_size / DIRENTRY_SIZE) + 2)
+		if (f_pos == (dir_oi->oi_size / OSPFS_DIRENTRY_SIZE) + 2)
 		  {
 		    r = 1;
 		    break;
@@ -466,7 +466,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 * this is done using f_pos and ospfs_inode_data
 		 */
 		
-		od = ospfs_inode_data(dir_inode, f_pos * DIRENTRY_SIZE);
+		od = ospfs_inode_data(dir_inode, f_pos * OSPFS_DIRENTRY_SIZE);
 
 		// skip any empty directory entries
 		if (od->od_ino == 0)
@@ -478,7 +478,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		// check the inode for the file type
 		entry_oi = ospfs_inode(od->od_ino);
 		uint32_t file_type;
-		switch(entry_oi->ftype)
+		switch(entry_oi->oi_ftype)
 		  {
 		  case OSPFS_FTYPE_REG:
 		    file_type = DT_REG;
@@ -492,11 +492,12 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		    file_type = DT_LNK;
 		    break;
 		  default:
+		    break;
 		  }
 
 		// fill in the arguments for filldir
 		ok_so_far = filldir(dirent, od->od_name, OSPFS_MAXNAMELEN + 1,
-				    od->od_ino, file_type);
+				    f_pos, od->od_ino, file_type);
 		f_pos++;
 	}
 
@@ -766,7 +767,7 @@ add_block(ospfs_inode_t *oi)
 
 	// block in indirect
 	else if (n < OSPFS_NINDIRECT + OSPFS_NDIRECT) {
-	  if (oi_indirect == 0) {
+	  if (oi->oi_indirect == 0) {
 	    // need to allocate indirect block and new block
 	    allocated[0] = allocate_block();
 	    if(!allocated[0]) {
@@ -783,7 +784,7 @@ add_block(ospfs_inode_t *oi)
 
 	// block in doubly-indirect
 	else if (!indir2In) {
-	  if (oi_indirect2 == 0) { // if doubly-indirect block not allocated
+	  if (oi->oi_indirect2 == 0) { // if doubly-indirect block not allocated
 	    allocated[0] = allocate_block();
 	    if(!allocated[0]) {
 	      free_block(allocated[0]);
@@ -793,15 +794,15 @@ add_block(ospfs_inode_t *oi)
 	    oi->oi_indirect2 = allocated[0];
 	  }
 
-	  uint32_t indir = ospfs_block(oi->oi_indirect2);
+	  uint32_t *indir = ospfs_block(oi->oi_indirect2);
 	  if(!indir[indirIn]) {
 	    allocated[1] = allocate_block();
 	    if(!allocated[1]) {
-	      free_allocated(allocated[1]);
+	      free_block(allocated[1]);
 	      return -ENOSPC;
 	    }
 	  }
-	  memset(ospfs_block(allocated[1], 0, OSPFS_BLKSIZE);
+	  memset(ospfs_block(allocated[1]), 0, OSPFS_BLKSIZE);
 	}
 }
 
@@ -1153,7 +1154,7 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 	// check for inode number 0
 	while (f_pos < (dir_oi->oi_size / OSPFS_DIRENTRY_SIZE))
 	  {
-	    od = ospfs_inode_data(dir_oi, f_pos * DIRENTRY_SIZE);
+	    od = ospfs_inode_data(dir_oi, f_pos * OSPFS_DIRENTRY_SIZE);
 
 	    if (od->od_ino == 0)
 	      {
@@ -1180,7 +1181,7 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 	  }
 
 	// return the next available location for a direntry
-	return ospfs_inode_data(dir_oi, f_pos * DIRENTRY_SIZE);
+	return ospfs_inode_data(dir_oi, f_pos * OSPFS_DIRENTRY_SIZE);
 }
 
 
