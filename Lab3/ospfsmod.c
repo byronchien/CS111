@@ -968,16 +968,21 @@ change_size(ospfs_inode_t *oi, uint32_t new_size)
 
 	while (ospfs_size2nblocks(oi->oi_size) < ospfs_size2nblocks(new_size)) {
 	        /* EXERCISE: Your code here */
-		return -EIO; // Replace this line
+	  int err = add_block(oi);
+	  if(err)
+	    return err;
 	}
 	while (ospfs_size2nblocks(oi->oi_size) > ospfs_size2nblocks(new_size)) {
 	        /* EXERCISE: Your code here */
-		return -EIO; // Replace this line
+	  int err = remove_block(oi);
+	  if(err)
+	    return err;
 	}
 
 	/* EXERCISE: Make sure you update necessary file meta data
 	             and return the proper value. */
-	return -EIO; // Replace this line
+	oi->oi_size = new_size;
+	return 0;
 }
 
 
@@ -1395,14 +1400,14 @@ ospfs_symlink(struct inode *dir, struct dentry *dentry, const char *symname)
 	  }
 
 	// get new dentry
-	struct dentry * new_dentry = create_blank_direntry(dir_oi);
+	ospfs_direntry_t * new_dentry = create_blank_direntry(dir_oi);
 	if (IS_ERR(new_dentry))
 	  {
 	    return PTR_ERR(new_dentry);
 	  }
 
 	// search for an available inode
-	ospfs_inode_t * search_inode;
+	ospfs_symlink_inode_t * search_inode;
 	int inode_num = 1;
 	while (inode_num < ospfs_super->os_ninodes)
 	  {
