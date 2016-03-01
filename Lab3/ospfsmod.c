@@ -1320,14 +1320,14 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 	    return -EEXIST;
 	  }
 
-	ospfs_direntry_t new_direntry = create_blank_direntry(dir_oi);
+	ospfs_direntry_t *new_direntry = create_blank_direntry(dir_oi);
 	if (IS_ERR(new_direntry))
 	  {
 	    return PTR_ERR(new_direntry);
 	  }
 
 	strncpy(new_direntry->od_name, dst_dentry->d_name.name, dst_dentry->d_name.len);
-	new_direntry->od_ino = src_dnetry->d_inode->i_ino;
+	new_direntry->od_ino = src_dentry->d_inode->i_ino;
 	dst_dentry->d_inode->i_ino = src_dentry->d_inode->i_ino;
 
 	ospfs_inode_t * target = ospfs_inode(src_dentry->d_inode->i_ino);
