@@ -1371,7 +1371,47 @@ ospfs_create(struct inode *dir, struct dentry *dentry, int mode, struct nameidat
 	ospfs_inode_t *dir_oi = ospfs_inode(dir->i_ino);
 	uint32_t entry_ino = 0;
 	/* EXERCISE: Your code here. */
-	return -EINVAL; // Replace this line
+	// check for errors
+	if (dentry->d_name.len > OSPFS_MAXNAMELEN)
+	  return -ENAMETOOLONG;
+	if (find_direntry(dir_oi, dentry->d_name.name, dentry->d_name.len))
+	  return -EEXIST;
+
+	ospfs_direntry_t * new_dentry = create_blank_direntry(dir_oi);
+	if (IS_ERR(new_dentry))
+	  return PTR_ERR(new_dentry);
+
+
+	// search for an available inode
+	ospfs_inode_t * search_inode;
+	int inode_num = 1;
+	while (inode_num < ospfs_super->os_ninodes) {
+	  search_inode = ospfs_inode(inode_num);
+	  if (search_inode->oi_nlink == 0)
+	    break;
+	  
+	  inode_num++;
+	}
+
+	// check that na inode was found
+	if (inode_num >= ospfs_super->os_ninodes)
+	  return -ENOSPC;
+	
+	// copy data fields for the inode and the directory entry
+	search_inode->oi_size = 0;
+	search_inode->oi_ftype = OSPFS_FTYPE_REG;
+	search_inode->oi_nlink = 1;
+	search_inode->oi_mode = mode;
+	int i;
+	for(i = 0; i < OSPFS_NDIRECT; i++) {
+	  search_inode->oi_direct[i] = 0;
+	}
+	search_inode->oi_indirect = 0;
+	search_inode->oi_indirect2 = 0;
+
+	new_dentry->od_ino = inode_num;
+	entry_ino = inode_num;
+	strncpy(new_dentry->od_name, dentry->d_name.name, dentry->d_name.len);
 
 	/* Execute this code after your function has successfully created the
 	   file.  Set entry_ino to the created file's inode number before
@@ -1461,6 +1501,8 @@ ospfs_symlink(struct inode *dir, struct dentry *dentry, const char *symname)
 
 	new_dentry->od_ino = inode_num;
 	strncpy(new_dentry->od_name, dentry->d_name.name, dentry->d_name.len);
+
+	entry_ino = inode_num;
 
 	/* EXERCISE: Your code here. */
 
