@@ -448,34 +448,56 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		ospfs_direntry_t *od;
 		ospfs_inode_t *entry_oi;
 
-		/* If at the end of the directory, set 'r' to 1 and exit
-		 * the loop.  For now we do this all the time.
-		 *
-		 * EXERCISE: Your code here */
-		r = 1;		/* Fix me! */
-		break;		/* Fix me! */
-
-		/* Get a pointer to the next entry (od) in the directory.
-		 * The file system interprets the contents of a
-		 * directory-file as a sequence of ospfs_direntry structures.
-		 * You will find 'f_pos' and 'ospfs_inode_data' useful.
-		 *
-		 * Then use the fields of that file to fill in the directory
-		 * entry.  To figure out whether a file is a regular file or
-		 * another directory, use 'ospfs_inode' to get the directory
-		 * entry's corresponding inode, and check out its 'oi_ftype'
-		 * member.
-		 *
-		 * Make sure you ignore blank directory entries!  (Which have
-		 * an inode number of 0.)
-		 *
-		 * If the current entry is successfully read (the call to
-		 * filldir returns >= 0), or the current entry is skipped,
-		 * your function should advance f_pos by the proper amount to
-		 * advance to the next directory entry.
+		/* size of directory is given in inode; divide the size by
+		 * the size of the directory entry to get the number of
+		 * directory entries. add two since f_pos accounts for
+		 * '.' and '..' entries
 		 */
+		
+		if (f_pos == (dir_oi->oi_size / DIRENTRY_SIZE) + 2)
+		  {
+		    r = 1;
+		    break;
+		  }
 
-		/* EXERCISE: Your code here */
+		/* get pointer to next entry (od) in the directory.
+		 * the file system interprets the contents of a directory-
+		 * file as a sequence of ospfs_direntry structures.
+		 * this is done using f_pos and ospfs_inode_data
+		 */
+		
+		od = ospfs_inode_data(dir_inode, f_pos * DIRENTRY_SIZE);
+
+		// skip any empty directory entries
+		if (od->od_ino == 0)
+		  {
+		    f_pos++;
+		    continue;
+		  }
+
+		// check the inode for the file type
+		entry_oi = ospfs_inode(od->od_ino);
+		uint32_t file_type;
+		switch(entry_oi->ftype)
+		  {
+		  case OSPFS_FTYPE_REG:
+		    file_type = DT_REG;
+		    break;
+
+		  case OSPFS_FTYPE_DIR:
+		    file_type = DT_DIR;
+		    break;
+
+		  case OSPFS_FTYPE_SYMLINK:
+		    file_type = DT_LNK;
+		    break;
+		  default:
+		  }
+
+		// fill in the arguments for filldir
+		ok_so_far = filldir(dirent, od->od_name, OSPFS_MAXNAMELEN + 1,
+				    od->od_ino, file_type);
+		f_pos++;
 	}
 
 	// Save the file position and return!
@@ -1121,16 +1143,46 @@ find_direntry(ospfs_inode_t *dir_oi, const char *name, int namelen)
 static ospfs_direntry_t *
 create_blank_direntry(ospfs_inode_t *dir_oi)
 {
-	// Outline:
-	// 1. Check the existing directory data for an empty entry.  Return one
-	//    if you find it.
-	// 2. If there's no empty entries, add a block to the directory.
-	//    Use ERR_PTR if this fails; otherwise, clear out all the directory
-	//    entries and return one of them.
+	ospfs_direntry_t *od;
+	int f_pos;
+	f_pos = 2;
+	int status;
+	status = 0;
 
-	/* EXERCISE: Your code here. */
-	return ERR_PTR(-EINVAL); // Replace this line
+	// loop through the directory searching for an empty direntry
+	// check for inode number 0
+	while (f_pos < (dir_oi->oi_size / OSPFS_DIRENTRY_SIZE))
+	  {
+	    od = ospfs_inode_data(dir_oi, f_pos * DIRENTRY_SIZE);
+
+	    if (od->od_ino == 0)
+	      {
+		status = 1;
+		break;
+	      }
+
+	    f_pos++;
+	  }
+
+	// empty directory entry found, return pointer
+	if (status)
+	  {
+	    return od;
+	  }
+
+	// no empty direntry found, must add block to the file
+	// if a block is not added properly, return the appropriate error
+	status = add_block(dir_oi);
+
+	if (status != 0)
+	  {
+	    return ERR_PTR(status);
+	  }
+
+	// return the next available location for a direntry
+	return ospfs_inode_data(dir_oi, f_pos * DIRENTRY_SIZE);
 }
+
 
 // ospfs_link(src_dentry, dir, dst_dentry
 //   Linux calls this function to create hard links.
