@@ -590,12 +590,12 @@ allocate_block(void)
 	int i;
 	for (i = 3; i < ospfs_super->os_nblocks; i++)
 	{
-		// bitvector_test returns 0 if block is free
-		if (!bitvector_test(free_block_map, i))
-		{
-			bitvector_set(free_block_map, i);
+	  // bitvector_test returns 0 if block is free
+	  if (bitvector_test(ospfs_block(2), i))
+	      {
+		  bitvector_clear(ospfs_block(2), i);
 			return i;
-		}
+	      }
 	}
 	return 0;
 }
@@ -622,9 +622,7 @@ free_block(uint32_t blockno)
 		return;
 	}
 
-	void * free_block_map = &ospfs_data[OSPFS_FREEMAP_BLK * OSPFS_BLKSIZE];
-
-	bitvector_clear(free_block_map, blockno);
+	bitvector_set(ospfs_block(2), blockno);
 }
 
 
@@ -681,12 +679,12 @@ indir2_index(uint32_t b)
 static int32_t
 indir_index(uint32_t b)
 {
-  if (b <= OSPFS_NDIRECT + OSPFS_NINDIRECT && b >= OSPFS_NDIRECT)
-    return 0;
-  else if (b < OSPFS_NDIRECT)
+  if (b < OSPFS_NDIRECT)
     return -1;
+  else if (b <= OSPFS_NDIRECT + OSPFS_NINDIRECT && b >= OSPFS_NDIRECT)
+    return 0;
   else
-    return (b - OSPFS_NDIRECT + OSPFS_NINDIRECT + 1) / (OSPFS_NINDIRECT + 1);
+    return (b - (OSPFS_NDIRECT + OSPFS_NINDIRECT + 1)) / (OSPFS_NINDIRECT + 1);
 }
 
 
@@ -705,7 +703,7 @@ direct_index(uint32_t b)
 	if (b < OSPFS_NDIRECT)
 	  return b;
 	else
-	  return (b - OSPFS_NDIRECT) / (OSPFS_NINDIRECT + 1);
+	  return (b - OSPFS_NDIRECT) % (OSPFS_NINDIRECT);
 }
 
 
@@ -751,10 +749,9 @@ add_block(ospfs_inode_t *oi)
 
 	/* EXERCISE: Your code here */
 	uint32_t dirIn = direct_index(n);
-	uint32_t indirIn = indir_index(n);
-	uint32_t indir2In = indir2_index(n);
 	uint32_t in = 0;
 	uint32_t in2 = 0;
+
 	if (n < 0)
 	  return -EIO;
 
@@ -795,7 +792,7 @@ add_block(ospfs_inode_t *oi)
 	  }
 	  memset(ospfs_block(in), 0, OSPFS_BLKSIZE);
 	  uint32_t *iblk = ospfs_block(oi->oi_indirect);
-	  iblk[direct_index(n)] = in;
+	  iblk[dirIn] = in;
 	}
 
 	// block in doubly-indirect
@@ -809,11 +806,12 @@ add_block(ospfs_inode_t *oi)
 	    oi->oi_indirect2 = allocated[0];
 	  }
 
-	  in2 = ospfs_block(oi->oi_indirect2);
+	  uint32_t *i2blk = ospfs_block(oi->oi_indirect2);
+	  in2 = i2blk[dirIn];
 	  if(!in2) { // need to allocate new indirect block
 	    allocated[1] = allocate_block();
 	    if(!allocated[1]) {
-	      if(allocated[0]){
+	      if(allocated[0]) {
 		free_block(allocated[0]);
 		oi->oi_indirect2 = 0;
 	      }
@@ -838,8 +836,11 @@ add_block(ospfs_inode_t *oi)
 	  }
 	  memset(ospfs_block(in), 0, OSPFS_BLKSIZE);
 	  uint32_t *la = ospfs_block(in2);
-	  la[direct_index(n)] = in;
+	  la[dirIn] = in;
 	}
+	else
+	  return -EIO;
+
 	oi->oi_size = (n+1) * OSPFS_BLKSIZE;
 	return 0;
 }
@@ -969,8 +970,10 @@ change_size(ospfs_inode_t *oi, uint32_t new_size)
 	while (ospfs_size2nblocks(oi->oi_size) < ospfs_size2nblocks(new_size)) {
 	        /* EXERCISE: Your code here */
 	  int err = add_block(oi);
-	  if(err)
+	  if(err) {
+	    new_size = old_size;
 	    return err;
+	  }
 	}
 	while (ospfs_size2nblocks(oi->oi_size) > ospfs_size2nblocks(new_size)) {
 	        /* EXERCISE: Your code here */
@@ -1049,7 +1052,7 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 	// Change 'count' so we never read past the end of the file.
 	/* EXERCISE: Your code here */
 	size_t remaining = oi->oi_size - *f_pos;
-	if (count < remaining)
+	if (count > remaining)
 	  count = remaining;
 
 	// Copy the data to user block by block
@@ -1071,10 +1074,13 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 		// into user space.
 		// Use variable 'n' to track number of bytes moved.
 		/* EXERCISE: Your code here */
-		uint32_t offset = (remaining - amount) % OSPFS_BLKSIZE;
-		n = OSPFS_BLKSIZE - offset;
+		uint32_t offset = *f_pos % OSPFS_BLKSIZE;
+		if (count + offset - amount > OSPFS_BLKSIZE)
+		  n = OSPFS_BLKSIZE - offset;
+		else
+		  n = count - amount;
 		// copy_to_user returns 0 on success
-		if(copy_to_user(buffer,	ospfs_inode_data(oi, *f_pos), n)) {
+		if(copy_to_user(buffer,	data, n)) {
 		  retval = -EFAULT;
 		  goto done;
 		}
@@ -1116,28 +1122,15 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 	// Support files opened with the O_APPEND flag.  To detect O_APPEND,
 	// use struct file's f_flags field and the O_APPEND bit.
 	/* EXERCISE: Your code here */
-	int append = 0;
 	if (filp->f_flags & O_APPEND)
-	  append = 1;
+	  *f_pos = oi->oi_size;
 
 	// If the user is writing past the end of the file, change the file's
 	// size to accomodate the request.  (Use change_size().)
 	/* EXERCISE: Your code here */
-	if (append) {
-	  *f_pos = oi->oi_size;
-	  int ret = change_size(oi, oi->oi_size + count);
-	  if (ret) {
-	    retval = ret;
-	    goto done;
-	  }
-	}
-	else if (count > oi->oi_size - *f_pos) {
-	  int ret = change_size(oi, *f_pos + count);
-	  if (ret) {
-	    retval = ret;
-	    goto done;
-	  }
-	}
+	if (oi->oi_size <= *f_pos + count)
+	  if(change_size(oi, *f_pos + count))
+	     goto done;
 
 	// Copy data block by block
 	while (amount < count && retval >= 0) {
@@ -1157,12 +1150,15 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 		// read user space.
 		// Keep track of the number of bytes moved in 'n'.
 		/* EXERCISE: Your code here */
-		uint32_t offset = (oi->oi_size - *f_pos - amount) % OSPFS_BLKSIZE;
+		uint32_t offset = *f_pos % OSPFS_BLKSIZE;
 		n = OSPFS_BLKSIZE - offset;
-		if(copy_from_user(ospfs_inode_data(oi, *f_pos), buffer, n)) {
+		if (n > count - amount)
+		  n = count - amount;
+		if(copy_from_user(data + offset, buffer, n)) {
 		  retval = -EFAULT;
+		  change_size(oi, *f_pos - count);
 		  goto done;
-		}
+	}	
 
 		buffer += n;
 		amount += n;
@@ -1260,9 +1256,11 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 	    return od;
 	  }
 
-	// no empty direntry found, must add block to the file
+	// no empty direntry found, must change file size
 	// if a block is not added properly, return the appropriate error
-	status = add_block(dir_oi);
+	uint32_t file_size;
+	file_size = (ospfs_size2nblocks(dir_oi->oi_size)+1) * OSPFS_BLKSIZE;
+	status = change_size(dir_oi, file_size);
 
 	if (status != 0)
 	  {
