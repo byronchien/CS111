@@ -585,12 +585,12 @@ allocate_block(void)
 	// creates pointer to the free block bitmap located in block 2
 	void * free_block_map = &ospfs_data[OSPFS_FREEMAP_BLK * OSPFS_BLKSIZE];
 
-	// search starts at 3 since 0, 2, and 1 are special blocks
+	// search starts at 3 since 0, 1, and 2 are special blocks
 	// loop iterates until maximum number of blocks
 	int i;
 	for (i = 3; i < ospfs_super->os_nblocks; i++)
 	{
-	  // bitvector_test returns 0 if block is free
+	  // bitvector_test returns 1 if block is free
 	  if (bitvector_test(ospfs_block(2), i))
 	      {
 		  bitvector_clear(ospfs_block(2), i);
