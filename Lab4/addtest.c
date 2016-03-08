@@ -15,6 +15,26 @@ void add(long long *pointer, long long value) {
   *pointer = sum;
 }
 
+struct arguments
+{
+  long long * counter;
+  int iterations;
+};
+
+void *threadfunction(void *p)
+{
+  struct arguments values;
+  values = *(struct arguments*) p;
+  int iterations = values.iterations;
+
+  int k;
+  for (k = 0; k < iterations; k++)
+    {
+      add(values.counter,1);
+      add(values.counter,-1);
+    }
+}
+
 int main (int argc, char **argv) {
   int nIter;
   int nThreads;
@@ -64,28 +84,43 @@ int main (int argc, char **argv) {
 
   long long counter = 0;
 
-  pthread_t threads[nIter];
+  //  pthread_t threads[nIter];
+  struct arguments parameters;
+  parameters.counter = &counter;
+  parameters.iterations = nIter;
+  pthread_t *threads = malloc(nThreads * sizeof(pthread_t*));
+  /*
   struct timespec begin, end;
   clock_gettime(CLOCK_MONOTONIC, &begin);
-
+  */
   int t;
   int err;
-  for(t=0; t<nIter; t++) {
-    err = pthread_create(&threads[t], NULL, add, (void *)t);
+  for(t=0; t<nThreads; t++) {
+    err = pthread_create(&threads[t], NULL, threadfunction, &parameters);
     if(err) {
       fprintf(stdout, "ERROR; pthread_create() failed with %d\n", err);
       exit(-1);
     }
   }
-  pthread_exit(NULL);
-  while(nIter--) {
+
+  for(t=0; t<nThreads; t++) {
+    pthread_join(threads[t],NULL);
+  }
+
+  free(threads);
+
+  //  pthread_exit(NULL);
+
+  /*  while(nIter--) {
     add(&counter, 1);
     add(&counter, -1);
-  }
+    }*/
   
-  clock_gettime(CLOCK_MONOTONIC, &end);
+  /*  clock_gettime(CLOCK_MONOTONIC, &end);
   printf("DIFF: %d\n", end.tv_nsec - begin.tv_nsec);
   printf("WRONG: %d\n", counter);
+  */
+  fprintf(stdout, "%d\n", counter);
   
   return -1;
 }
