@@ -136,23 +136,23 @@ int main (int argc, char **argv) {
   int nElements = nThreads * nIter;
   printf("nElements: %d\n", nElements);
   SortedListElement_t * elements[nElements];
+  char * keys[nElements];
 
   srand(time(NULL));
   for(i=0; i<nElements; i++ ) {
     elements[i] = malloc(sizeof(SortedListElement_t));
-    
-    char randkey[9];
+    keys[i] = malloc(sizeof(char) * 9);
     int j = 0;
     while (j < 8) { // generate random key
       int random = rand() % 123; // 122 is highest ASCII int for alpha
       if(isalpha(random)) {
-	randkey[j] = (char) random;
+	keys[i][j] = (char) random;
 	j++;
       }
     }
-    randkey[8] = 0;
-    printf("KEY%d: %s\n", i, randkey);
-    elements[i]->key = &randkey[0];
+    keys[i][8] = 0;
+    printf("KEY%d: %s\n", i, keys[i]);
+    elements[i]->key = keys[i];
   }
 
   pthread_t * threads = malloc(nThreads * sizeof(pthread_t*));
