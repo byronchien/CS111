@@ -18,7 +18,9 @@ int main (int argc, char **argv) {
   int nIter;
   int nThreads;
   char yields[3];
-  
+  int q;
+  for(q = 0; q < 3; q++)
+    yields[q] = 0;
 
   nIter = 1;
   nThreads = 1;
@@ -73,6 +75,8 @@ int main (int argc, char **argv) {
       break;
     case 's':
       opt_yield |= 0x04;
+      break;
+    case 0:
       break;
     default:
       fprintf(stdout, "Yield value '%c' not recognized.\n", yields[i]);
