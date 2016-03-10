@@ -10,10 +10,97 @@ void usage(char **argv) {
   exit(-1);
 }
 
+// this version of the add function does not use yield
+
+/*
 void add(long long *pointer, long long value) {
   long long sum = *pointer + value;
   *pointer = sum;
 }
+*/
+
+
+/**************************************************************
+/ QUESTION 1.1
+*/
+
+/* this version of the add function uses yield and as a result,
+ * the function should be slower and cause more errors
+ */
+
+
+int opt_yield;
+
+/*
+void add(long long *pointer, long long value) {
+  long long sum = *pointer + value;
+  if (opt_yield)
+    pthread_yield();
+
+  *pointer = sum;
+}
+*/
+
+/**************************************************************
+/ QUESTION 1.2
+*/
+
+/* these versions of the add function are for synchronization,
+ * so the race conditions should be fixed when using these
+ */
+
+/* this version of the add function uses a pthread_mutex to sync
+ * updates to the counter.
+ */
+
+pthread_mutex_t lock;
+/*
+void add(long long *pointer, long long value) {
+  pthread_mutex_lock(&lock);
+  long long sum = *pointer + value;
+  *pointer = sum;
+  pthread_mutex_unlock(&lock);
+}
+*/
+
+/* this version of the add function uses the gcc atomic built-ins
+ * to implement a spinlock and syncs updates that way
+ */
+
+volatile int spinlock;
+/*
+void add(long long *pointer, long long value) {
+  while (__sync_lock_test_and_set(&spinlock, 1))
+    {
+      continue;
+    }
+
+  long long sum = *pointer + value;
+  *pointer = sum;
+
+  __sync_lock_release(&spinlock);    
+}
+*/
+
+/* this version of the add function uses an atomic operation to
+ * update the counter instead of a locking mechanism like the other
+ * two functions.
+ */
+
+void add(long long *pointer, long long value) {
+  int status;
+  status = 0;
+
+  while (status == 0)
+    {
+      long long oldvalue;
+      oldvalue = __sync_val_compare_and_swap(pointer, *pointer, *pointer + value);
+
+      status = oldvalue + value == *pointer ? 1 : 0;
+    }
+}
+
+
 
 struct arguments
 {
@@ -38,12 +125,14 @@ void *threadfunction(void *p)
 int main (int argc, char **argv) {
   int nIter;
   int nThreads;
-
+  int status;
+  status = 0;
+  
   if (argc == 1) {
     nIter = 1;
     nThreads = 1;
   }
-  else if (argc > 3) {
+  else if (argc > 4) {
     usage(argv);
   }
 
@@ -67,6 +156,16 @@ int main (int argc, char **argv) {
 	usage(argv);
       }
       break;
+    case 'y':
+      opt_yield = 1;
+      if (argc == 2) {
+	nIter = 1;
+	nThreads = 1;
+      }
+      else if (argc != 4) {
+	usage(argv);
+      }
+      break;
     case -1: // finished
       ++stop;
       break;
@@ -84,15 +183,18 @@ int main (int argc, char **argv) {
 
   long long counter = 0;
 
+  pthread_mutex_init(&lock, NULL);
+  spinlock = 0;
+  
   //  pthread_t threads[nIter];
   struct arguments parameters;
   parameters.counter = &counter;
   parameters.iterations = nIter;
   pthread_t *threads = malloc(nThreads * sizeof(pthread_t*));
-  /*
+  
   struct timespec begin, end;
   clock_gettime(CLOCK_MONOTONIC, &begin);
-  */
+  
   int t;
   int err;
   for(t=0; t<nThreads; t++) {
@@ -109,6 +211,19 @@ int main (int argc, char **argv) {
 
   free(threads);
 
+  if (counter != 0)
+    {
+      fprintf(stderr,"ERROR: final count = %d\n",counter);
+      status = 1;
+    }
+
+  clock_gettime(CLOCK_MONOTONIC, &end);
+
+  long time_elapsed = (end.tv_nsec - begin.tv_nsec) + (end.tv_sec - begin.tv_sec) * 1e9;
+
+  fprintf(stdout, "elapsed time: %d ns\n", time_elapsed);
+  fprintf(stdout, "per operation: %d ns\n", time_elapsed / (2 * nThreads * nIter));
+  
   //  pthread_exit(NULL);
 
   /*  while(nIter--) {
@@ -120,7 +235,8 @@ int main (int argc, char **argv) {
   printf("DIFF: %d\n", end.tv_nsec - begin.tv_nsec);
   printf("WRONG: %d\n", counter);
   */
-  fprintf(stdout, "%d\n", counter);
-  
-  return -1;
+
+
+  pthread_mutex_destroy(&lock);
+  exit(status);
 }

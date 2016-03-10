@@ -3,5 +3,6 @@
 static struct option long_options[] = {
   {"iter=", required_argument, 0, 'i'},
   {"threads=", required_argument, 0, 't'},
+  {"yield=", required_argument, 0, 'y'},
   {0,0,0,0}
 };
