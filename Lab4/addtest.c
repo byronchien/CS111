@@ -10,14 +10,16 @@ void usage(char **argv) {
   exit(-1);
 }
 
+void (*add_function)(long long *pointer, long long value);
+
 // this version of the add function does not use yield
 
-/*
+
 void add(long long *pointer, long long value) {
   long long sum = *pointer + value;
   *pointer = sum;
 }
-*/
+
 
 
 /**************************************************************
@@ -31,15 +33,15 @@ void add(long long *pointer, long long value) {
 
 int opt_yield;
 
-/*
-void add(long long *pointer, long long value) {
+
+void add_yield(long long *pointer, long long value) {
   long long sum = *pointer + value;
   if (opt_yield)
     pthread_yield();
 
   *pointer = sum;
 }
-*/
+
 
 /**************************************************************
 / QUESTION 1.2
@@ -54,22 +56,22 @@ void add(long long *pointer, long long value) {
  */
 
 pthread_mutex_t lock;
-/*
-void add(long long *pointer, long long value) {
+
+void add_mutex(long long *pointer, long long value) {
   pthread_mutex_lock(&lock);
   long long sum = *pointer + value;
   *pointer = sum;
   pthread_mutex_unlock(&lock);
 }
-*/
+
 
 /* this version of the add function uses the gcc atomic built-ins
  * to implement a spinlock and syncs updates that way
  */
 
 volatile int spinlock;
-/*
-void add(long long *pointer, long long value) {
+
+void add_spinlock(long long *pointer, long long value) {
   while (__sync_lock_test_and_set(&spinlock, 1))
     {
       continue;
@@ -80,24 +82,25 @@ void add(long long *pointer, long long value) {
 
   __sync_lock_release(&spinlock);    
 }
-*/
+
 
 /* this version of the add function uses an atomic operation to
  * update the counter instead of a locking mechanism like the other
  * two functions.
  */
 
-void add(long long *pointer, long long value) {
-  int status;
-  status = 0;
+void add_atomic(long long *pointer, long long value) {
+  long long new;
 
-  while (status == 0)
+  while(1)
     {
-      long long oldvalue;
-      oldvalue = __sync_val_compare_and_swap(pointer, *pointer, *pointer + value);
-
-      status = oldvalue + value == *pointer ? 1 : 0;
+      new = *pointer + value;
+      if (__sync_val_compare_and_swap(pointer, *pointer, new) + value
+	  == new)
+	break;
     }
+
+  
 }
 
 
@@ -117,8 +120,8 @@ void *threadfunction(void *p)
   int k;
   for (k = 0; k < iterations; k++)
     {
-      add(values.counter,1);
-      add(values.counter,-1);
+      add_function(values.counter,1);
+      add_function(values.counter,-1);
     }
 }
 
@@ -127,12 +130,12 @@ int main (int argc, char **argv) {
   int nThreads;
   int status;
   status = 0;
+  nIter = 1;
+  nThreads = 1;
+
+  add_function = add;
   
-  if (argc == 1) {
-    nIter = 1;
-    nThreads = 1;
-  }
-  else if (argc > 4) {
+  if (argc > 4) {
     usage(argv);
   }
 
@@ -157,14 +160,34 @@ int main (int argc, char **argv) {
       }
       break;
     case 'y':
-      opt_yield = 1;
-      if (argc == 2) {
-	nIter = 1;
-	nThreads = 1;
-      }
-      else if (argc != 4) {
-	usage(argv);
-      }
+      opt_yield = atoi(optarg);
+
+      if (opt_yield != 1)
+	{
+	  fprintf(stdout, "yield should be 1 or not used, yield set to 0\n");
+	  opt_yield = 0;
+	}
+
+      add_function = add_yield;
+      break;
+    case 's':
+      switch(*optarg)
+	{
+	case 'm':
+	  add_function = add_mutex;
+	  break;
+	case 's':
+	  add_function = add_spinlock;
+	  break;
+	case 'c':
+	  add_function = add_atomic;
+	  fprintf(stdout,"here\n");
+	  break;
+	default:
+	  fprintf(stderr, "ERROR: sync option %s not recognized\n", optarg);
+	  exit(1);
+	}
+      
       break;
     case -1: // finished
       ++stop;
