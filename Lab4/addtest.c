@@ -73,9 +73,7 @@ volatile int spinlock;
 
 void add_spinlock(long long *pointer, long long value) {
   while (__sync_lock_test_and_set(&spinlock, 1))
-    {
-      continue;
-    }
+    continue;
 
   long long sum = *pointer + value;
   *pointer = sum;
@@ -91,16 +89,13 @@ void add_spinlock(long long *pointer, long long value) {
 
 void add_atomic(long long *pointer, long long value) {
   long long new;
+  long long old;
 
-  while(1)
-    {
-      new = *pointer + value;
-      if (__sync_val_compare_and_swap(pointer, *pointer, new) + value
-	  == new)
-	break;
-    }
-
-  
+  while(*pointer != new) {
+    old = *pointer;
+    new = old + value;
+    __sync_val_compare_and_swap(pointer, old, new);
+  }
 }
 
 
@@ -123,6 +118,7 @@ void *threadfunction(void *p)
       add_function(values.counter,1);
       add_function(values.counter,-1);
     }
+
 }
 
 int main (int argc, char **argv) {
@@ -222,6 +218,7 @@ int main (int argc, char **argv) {
   int err;
   for(t=0; t<nThreads; t++) {
     err = pthread_create(&threads[t], NULL, threadfunction, &parameters);
+
     if(err) {
       fprintf(stdout, "ERROR; pthread_create() failed with %d\n", err);
       exit(-1);
