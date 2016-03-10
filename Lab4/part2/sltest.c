@@ -14,14 +14,60 @@ void usage(char **argv) {
   exit(-1);
 }
 
+struct arguments
+{
+  SortedList_t *list;
+  SortedListElement_t * elements;
+  int nIter;
+};
+
+void *threadfunction(void*p)
+{
+  struct arguments values;
+  values = *(struct arguments*) p;
+
+  int k;
+  for (k = 0; k < values.nIter; k++)
+    {
+      SortedList_insert(values.list, values.elements + k);
+    }
+
+  int length;
+  length = SortedList_length(values.list);
+
+  if (length == -1)
+    {
+      fprintf(stdout, "ERROR: SortedList_length returned %d\n", length);
+      exit(1);
+    }
+  
+  fprintf(stdout, "List length: %d", SortedList_length(values.list));
+
+  SortedListElement_t* query;
+
+  int status;
+  status = 0;
+  
+  for (k = 0; k < values.nIter; k++)
+    {
+      query = SortedList_lookup(values.list, (values.elements+k)->key);
+      status = SortedList_delete(query);
+
+      if (status != 0)
+	{
+	  fprintf(stdout, "ERROR: SortedList_delete returned &d\n",status);
+	  exit(1);
+	}
+    }
+  
+}
+
+  
 int main (int argc, char **argv) {
   int nIter;
   int nThreads;
   char yields[3];
-  int q;
-  for(q = 0; q < 3; q++)
-    yields[q] = 0;
-
+  
   nIter = 1;
   nThreads = 1;
   
@@ -76,11 +122,9 @@ int main (int argc, char **argv) {
     case 's':
       opt_yield |= 0x04;
       break;
-    case 0:
-      break;
     default:
       fprintf(stdout, "Yield value '%c' not recognized.\n", yields[i]);
-      usage(argv);
+      //usage(argv);
     }
   }
   
@@ -92,7 +136,7 @@ int main (int argc, char **argv) {
   int nElements = nThreads * nIter;
   printf("nElements: %d\n", nElements);
   SortedListElement_t * elements[nElements];
-  
+
   srand(time(NULL));
   for(i=0; i<nElements; i++ ) {
     elements[i] = malloc(sizeof(SortedListElement_t));
@@ -111,11 +155,36 @@ int main (int argc, char **argv) {
     elements[i]->key = &randkey[0];
   }
 
+  pthread_t * threads = malloc(nThreads * sizeof(pthread_t*));
+
+  struct arguments parameters;
+  parameters.list = list;
+  parameters.elements = &elements;
+  parameters.nIter = nIter;
+  
   struct timespec begin, end;
   clock_gettime(CLOCK_MONOTONIC, &begin);
-  ////////////////////////////////////////
-  //////BYRONE PUT ALL YO CRAP HERE///////
-  ////////////////////////////////////////
+
+  
+  int t;
+  int err;
+  for(t = 0; t < nThreads; t++) {
+
+    parameters.elements = elements + t*nIter;
+    err = pthread_create(&threads[t], NULL, threadfunction, &parameters);
+
+    if(err) {
+      fprintf(stdout, "ERROR; pthread_create() failed with &d\n", err);
+      exit(-1);
+    }
+  }
+
+  for(t = 0; t < nThreads; t++) {
+    pthread_join(threads[t],NULL);
+  }
+
+
+  
   clock_gettime(CLOCK_MONOTONIC, &end);
 
   if (SortedList_length(list) != 0) {
@@ -131,6 +200,7 @@ int main (int argc, char **argv) {
   fprintf(stdout, "per operation: %d ns\n", timediff/nOps);
 
   free(list);
+  free(threads);
   for(i=0; i<nElements; i++)
     free(elements[i]);
   
