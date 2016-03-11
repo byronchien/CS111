@@ -5,5 +5,6 @@ static struct option long_options[] = {
   {"threads=", required_argument, 0, 't'},
   {"yields=", required_argument, 0, 'y'},
   {"sync=", required_argument, 0, 's'},
+  {"lists=", required_argument, 0, 'l'},
   {0,0,0,0}
 };

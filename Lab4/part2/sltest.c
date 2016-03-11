@@ -8,9 +8,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <math.h>
 
 void usage(char **argv) {
-  fprintf( stderr, "Usage: %s --threads=NTHREADS --iter=NINTERATIONS --yield=[ids]\n", argv[0] );
+  fprintf( stderr, "Usage: %s --threads=NTHREADS --iter=NINTERATIONS --yield=[ids] --sync=[ms] --lists=NLISTS\n", argv[0] );
   exit(-1);
 }
 
@@ -71,13 +72,32 @@ void *threadfunction(void*p)
     }
 
 }
+
+
+int chooselist(char * key, int nLists)
+{
+  int k = 111;
+  long hash = 0;
   
+  int i = 0;
+  while(key[i] != 0) {
+    hash += key[i] * exp(k, i);
+  }
+
+  return hash % nLists;
+}
+
+
 int main (int argc, char **argv) {
   int nIter;
   int nThreads;
   char yields[3];
+  int q;
+  for (q=0; q<3; q++)
+    yields[q] = 0;
   pthread_mutex_init(&lock, NULL);
   spinlock = 0;
+  int nLists;
 
   insert = SortedList_insert;
   delete = SortedList_delete;
@@ -86,8 +106,9 @@ int main (int argc, char **argv) {
   
   nIter = 1;
   nThreads = 1;
+  nLists = 1;
   
-  if (argc > 5)
+  if (argc > 6)
     usage(argv);
 
   int stop = 0;
@@ -133,6 +154,15 @@ int main (int argc, char **argv) {
 	  exit(1);
 	}
       break;
+
+    case 'l':
+      nLists = atoi(optarg);
+      if ( nLists < 1 ) {
+	fprintf(stdout, "NLISTS must be > 1\n");
+	usage(argv);
+      }
+      break;
+
       
     case -1: // finished
       ++stop;
@@ -159,22 +189,27 @@ int main (int argc, char **argv) {
     case 's':
       opt_yield |= 0x04;
       break;
+    case 0:
+      break;
     default:
       fprintf(stdout, "Yield value '%c' not recognized.\n", yields[i]);
-      //usage(argv);
+      usage(argv);
     }
   }
-  
-  SortedList_t *list = malloc(sizeof(SortedList_t));
-  list->next = list;
-  list->prev = list;
-  list->key = NULL;
+
+  SortedList_t * listlist = malloc(sizeof(SortedList_t*) * nLists);
+  for(i=0; i<nLists; i++) {
+    listlist[i] = malloc(sizeof(SortedList_t));
+    listlist[i]->next = list;
+    listlist[i]->prev = list;
+    listlist[i]->key = NULL;
+  }
   
   int nElements = nThreads * nIter;
-  printf("nElements: %d\n", nElements);
   SortedListElement_t** elements = malloc(sizeof(SortedListElement_t*) * nElements);
   char** keys = malloc(sizeof(char*) * nElements);
 
+  /* Generate Keys */
   srand(time(NULL));
   for(i=0; i<nElements; i++ ) {
     elements[i] = malloc(sizeof(SortedListElement_t));
@@ -236,16 +271,17 @@ int main (int argc, char **argv) {
   fprintf(stdout, "elapsed time: %d ns\n", timediff);
   fprintf(stdout, "per operation: %d ns\n", timediff/nOps);
   
-  free(list);
   free(threads);
   free(parameters);
   pthread_mutex_destroy(&lock);
   for(i=0; i<nElements; i++) {
     free(elements[i]);
     free(keys[i]);
+    free(listlist[i]);
   }
   free(elements);
   free(keys);
+  free(listlist);
   
   return 0;
 }
