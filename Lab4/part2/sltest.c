@@ -7,9 +7,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <ctype.h>
-#include <time.h>
 #include <math.h>
-#include <stdint.h>
 
 void usage(char **argv) {
   fprintf( stderr, "Usage: %s --threads=NTHREADS --iter=NINTERATIONS --yield=[ids] --sync=[ms] --lists=NLISTS\n", argv[0] );
@@ -18,7 +16,8 @@ void usage(char **argv) {
 
 pthread_mutex_t lock;
 volatile int spinlock;
-uint64_t time_design;
+
+unsigned long long time_design;
 
 struct arguments
 {
@@ -33,7 +32,7 @@ int (*delete) (SortedListElement_t *element);
 SortedListElement_t* (*lookup) (SortedList_t *list, const char *key);
 int (*list_length) (SortedList_t *list);
 
-int chooselist(char * key, int nLists)
+int chooselist(const char * key, int nLists)
 {
   int k = 111;
   long hash = 0;
@@ -47,10 +46,10 @@ int chooselist(char * key, int nLists)
   return hash % nLists;
 }
 
-void update_count(long value)
+void update_count(unsigned long long value)
 {
-  long long new = time_design + value;
-  long long old = time_design;
+  unsigned long long new = time_design + value;
+  unsigned long long old = time_design;
 
   while(time_design != new) {
     old = time_design;
@@ -62,8 +61,6 @@ void update_count(long value)
 void *threadfunction(void*p)
 {
   struct timespec begin, end;
-
-  clock_gettime(CLOCK_MONOTONIC, &begin);
   
   struct arguments values;
   values = *(struct arguments*) p;
@@ -72,21 +69,26 @@ void *threadfunction(void*p)
   int j;
   for (k = 0; k < values.nIter; k++)
     {
+      clock_gettime(CLOCK_MONOTONIC, &begin);
       j = chooselist(values.elements[k]->key, values.nLists);
       insert(values.listlist[j], values.elements[k]);
+      clock_gettime(CLOCK_MONOTONIC, &end);
+      update_count(end.tv_nsec - begin.tv_nsec);
     }
 
   int length;
   for (k = 0; k < values.nLists; k++)
     {
-
+      clock_gettime(CLOCK_MONOTONIC, &begin);
       length = list_length(values.listlist[k]);
+      clock_gettime(CLOCK_MONOTONIC, &end);
+      update_count(end.tv_nsec - begin.tv_nsec);
       if (length == -1)
 	{
 	  fprintf(stdout, "ERROR: SortedList_length returned %d\n", length);
 	  exit(1);
 	}
-      fprintf(stdout, "List length: %d\n", length);
+      //fprintf(stdout, "List length: %d\n", length);
     }
 
   SortedListElement_t* query;
@@ -96,21 +98,20 @@ void *threadfunction(void*p)
   
   for (k = 0; k < values.nIter; k++)
     {
+      clock_gettime(CLOCK_MONOTONIC, &begin);
       j = chooselist(values.elements[k]->key, values.nLists);
       query = lookup(values.listlist[j], values.elements[k]->key);
       status = delete(query);
-
+      clock_gettime(CLOCK_MONOTONIC, &end);
+      update_count(end.tv_nsec - begin.tv_nsec);
       if (status != 0)
 	{
 	  fprintf(stdout, "ERROR: SortedList_delete returned &d\n",status);
 	  exit(1);
 	}
     }
-
-  clock_gettime(CLOCK_MONOTONIC, &end);
-  update_count(end.tv_nsec - begin.tv_nsec);
-  update_count(-130);
 }
+
 
 int main (int argc, char **argv) {
   int nIter;
@@ -122,7 +123,11 @@ int main (int argc, char **argv) {
   pthread_mutex_init(&lock, NULL);
   spinlock = 0;
   int nLists;
+  int correct = 0;
 
+  time_design = 0;
+  struct timespec begin, end;  
+  
   insert = SortedList_insert;
   delete = SortedList_delete;
   lookup = SortedList_lookup;
@@ -187,6 +192,9 @@ int main (int argc, char **argv) {
       }
       break;
 
+    case 'c':
+      correct = 1;
+      break;
       
     case -1: // finished
       ++stop;
@@ -247,7 +255,7 @@ int main (int argc, char **argv) {
       }
     }
     keys[i][8] = 0;
-    printf("KEY%d: %s\n", i, keys[i]);
+    //    printf("KEY%d: %s\n", i, keys[i]);
     elements[i]->key = keys[i];
   }
 
@@ -255,10 +263,9 @@ int main (int argc, char **argv) {
 
   struct arguments* parameters;
   parameters = malloc(nThreads * sizeof(struct arguments));
-  
-  struct timespec begin, end;
-  clock_gettime(CLOCK_MONOTONIC, &begin);
 
+  
+  clock_gettime(CLOCK_MONOTONIC, &begin);
   
   int t;
   int err;
@@ -279,8 +286,6 @@ int main (int argc, char **argv) {
   for(t = 0; t < nThreads; t++) {
     pthread_join(threads[t],NULL);
   }
-
-
   
   clock_gettime(CLOCK_MONOTONIC, &end);
 
@@ -290,13 +295,15 @@ int main (int argc, char **argv) {
     }
   }
 
-  long nOps = nThreads*nIter*2*nElements;
-  long timediff = time_design; //end.tv_nsec - begin.tv_nsec;
+  unsigned long long nOps = nThreads*nIter*(nIter/nLists);
+  time_design = correct ? time_design :
+    (end.tv_sec*1e9 + end.tv_nsec) - (begin.tv_sec*1e9 + begin.tv_nsec);
+  unsigned long long tdiff = time_design;
   fprintf(stdout,
-	  "%d threads x %d iterations x (ins + lookup/del) x (%d/2 avg len) = %d operations\n",
-	  nThreads, nIter, nElements, nOps);
-  fprintf(stdout, "elapsed time: %d ns\n", timediff);
-  fprintf(stdout, "per operation: %d ns\n", (unsigned)timediff/nOps);
+       "%d threads x %d iterations x (ins + lookup/del) x (%d/2 avg len) = %d operations\n",
+	  nThreads, nIter, nIter / nLists, nOps);
+  fprintf(stdout, "elapsed time: %d ns\n", (unsigned)tdiff);
+  fprintf(stdout, "per operation: %d ns\n", time_design/nOps);
   
   free(threads);
   free(parameters);

@@ -275,7 +275,7 @@ int main (int argc, char **argv) {
   clock_gettime(CLOCK_MONOTONIC, &end);
 
   time_design = (correct) ? time_design :
-    (end.tv_nsec - begin.tv_nsec) + (end.tv_sec - begin.tv_sec) * 1e9;
+    (end.tv_sec*1e9 + end.tv_nsec) - (begin.tv_sec*1e9 + begin.tv_nsec);
   
   fprintf(stdout, "elapsed time: %d ns\n", time_design);
   fprintf(stdout, "per operation: %d ns\n", (unsigned) time_design / (2 * nThreads * nIter));
