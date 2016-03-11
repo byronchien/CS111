@@ -81,7 +81,7 @@ int chooselist(char * key, int nLists)
   
   int i = 0;
   while(key[i] != 0) {
-    hash += key[i] * exp(k, i);
+    hash += key[i] * pow(k, i);
   }
 
   return hash % nLists;
@@ -197,11 +197,11 @@ int main (int argc, char **argv) {
     }
   }
 
-  SortedList_t * listlist = malloc(sizeof(SortedList_t*) * nLists);
+  SortedList_t ** listlist = malloc(sizeof(SortedList_t*) * nLists);
   for(i=0; i<nLists; i++) {
     listlist[i] = malloc(sizeof(SortedList_t));
-    listlist[i]->next = list;
-    listlist[i]->prev = list;
+    listlist[i]->next = listlist[i];
+    listlist[i]->prev = listlist[i];
     listlist[i]->key = NULL;
   }
   
