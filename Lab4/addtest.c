@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <pthread.h>
+#include <stdint.h>
 
 void usage(char **argv) {
   fprintf( stderr, "Usage: %s --iter=NINTERATIONS --threads=NTHREADS\n", argv[0] );
@@ -21,7 +22,7 @@ void add(long long *pointer, long long value) {
   *pointer = sum;
 }
 
-
+uint64_t time_design;
 
 /**************************************************************
 / QUESTION 1.1
@@ -118,30 +119,53 @@ struct arguments
 
 void *threadfunction(void *p)
 {
+  struct timespec begin,end;
+
   struct arguments values;
   values = *(struct arguments*) p;
   int iterations = values.iterations;
 
   int k;
+
   for (k = 0; k < iterations; k++)
     {
+      clock_gettime(CLOCK_MONOTONIC, &begin);
       add_function(values.counter,1);
       add_function(values.counter,-1);
+      clock_gettime(CLOCK_MONOTONIC, &end);
+      update_count(end.tv_nsec - begin.tv_nsec);
     }
+  
+  update_count(-130);
+}
 
+void update_count(long value)
+{
+  long long new = time_design + value;
+  long long old = time_design;
+
+  while(time_design != new) {
+    old = time_design;
+    new = time_design + value;
+    __sync_val_compare_and_swap(&time_design, old, new);
+  }
 }
 
 int main (int argc, char **argv) {
   int nIter;
   int nThreads;
   int status;
+  int correct;
   status = 0;
   nIter = 1;
   nThreads = 1;
-
+  correct = 0;
+  
+  time_design = 0;
+  
   add_function = add;
   
-  if (argc > 4) {
+  if (argc > 5) {
     usage(argv);
   }
 
@@ -194,6 +218,9 @@ int main (int argc, char **argv) {
 	  exit(1);
 	}
       
+      break;
+    case 'c':
+      correct = 1;
       break;
     case -1: // finished
       ++stop;
@@ -249,10 +276,11 @@ int main (int argc, char **argv) {
 
   clock_gettime(CLOCK_MONOTONIC, &end);
 
-  long time_elapsed = (end.tv_nsec - begin.tv_nsec) + (end.tv_sec - begin.tv_sec) * 1e9;
-
-  fprintf(stdout, "elapsed time: %d ns\n", time_elapsed);
-  fprintf(stdout, "per operation: %d ns\n", time_elapsed / (2 * nThreads * nIter));
+  time_design = (correct) ? time_design :
+    (end.tv_nsec - begin.tv_nsec) + (end.tv_sec - begin.tv_sec) * 1e9;
+  
+  fprintf(stdout, "elapsed time: %d ns\n", time_design);
+  fprintf(stdout, "per operation: %d ns\n", (unsigned) time_design / (2 * nThreads * nIter));
   
   //  pthread_exit(NULL);
 

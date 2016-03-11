@@ -70,7 +70,27 @@ resulting in what appears to be better performance.
 
 
 QUESTIONS 2.3
-1. Explain the the change in performance of the synchronized methods as a function of the number of threads per list.
+1. Explain the the change in performance of the synchronized methods as a function of the
+number of threads per list.
 
 
-2. Explain why threads per list is a more interesting number than threads (for this particular measurement).
+2. Explain why threads per list is a more interesting number than threads (for this
+particular measurement).
+
+
+QUESTIONS 3.1
+1. Why must the mutex be held when pthread_cond_wait is called?
+
+
+2. Why must the mutex be released when the waiting thread is blocked?
+
+
+3. Why must the mutex be reacquired when the calling thread resumes?
+
+
+4. Why must this be done inside of pthread_cond_wait? Why can't the caller simply release
+the mutex before calling pthread_cond_wait?
+
+
+5. Can this be done in a user-mode implementation of pthread_cond_wait? If so, how? If it can
+only be implemented by a system call, explain why?

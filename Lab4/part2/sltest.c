@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <math.h>
+#include <stdint.h>
 
 void usage(char **argv) {
   fprintf( stderr, "Usage: %s --threads=NTHREADS --iter=NINTERATIONS --yield=[ids] --sync=[ms] --lists=NLISTS\n", argv[0] );
@@ -17,6 +18,7 @@ void usage(char **argv) {
 
 pthread_mutex_t lock;
 volatile int spinlock;
+uint64_t time_design;
 
 struct arguments
 {
@@ -45,10 +47,24 @@ int chooselist(char * key, int nLists)
   return hash % nLists;
 }
 
+void update_count(long value)
+{
+  long long new = time_design + value;
+  long long old = time_design;
+
+  while(time_design != new) {
+    old = time_design;
+    new = time_design + value;
+    __sync_val_compare_and_swap(&time_design, old, new);
+  }
+}
 
 void *threadfunction(void*p)
 {
+  struct timespec begin, end;
 
+  clock_gettime(CLOCK_MONOTONIC, &begin);
+  
   struct arguments values;
   values = *(struct arguments*) p;
 
@@ -91,6 +107,9 @@ void *threadfunction(void*p)
 	}
     }
 
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  update_count(end.tv_nsec - begin.tv_nsec);
+  update_count(-130);
 }
 
 int main (int argc, char **argv) {
@@ -272,12 +291,12 @@ int main (int argc, char **argv) {
   }
 
   long nOps = nThreads*nIter*2*nElements;
-  long timediff = end.tv_nsec - begin.tv_nsec;
+  long timediff = time_design; //end.tv_nsec - begin.tv_nsec;
   fprintf(stdout,
 	  "%d threads x %d iterations x (ins + lookup/del) x (%d/2 avg len) = %d operations\n",
 	  nThreads, nIter, nElements, nOps);
   fprintf(stdout, "elapsed time: %d ns\n", timediff);
-  fprintf(stdout, "per operation: %d ns\n", timediff/nOps);
+  fprintf(stdout, "per operation: %d ns\n", (unsigned)timediff/nOps);
   
   free(threads);
   free(parameters);
