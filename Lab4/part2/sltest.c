@@ -14,34 +14,44 @@ void usage(char **argv) {
   exit(-1);
 }
 
+pthread_mutex_t lock;
+volatile int spinlock;
+
 struct arguments
 {
   SortedList_t *list;
-  SortedListElement_t * elements;
-  int nIter;
+  SortedListElement_t ** elements;
+  int nIter,start;
 };
+
+void (*insert) (SortedList_t *list, SortedListElement_t *element);
+int (*delete) (SortedListElement_t *element);
+SortedListElement_t* (*lookup) (SortedList_t *list, const char *key);
+int (*list_length) (SortedList_t *list);
 
 void *threadfunction(void*p)
 {
+
   struct arguments values;
   values = *(struct arguments*) p;
 
   int k;
   for (k = 0; k < values.nIter; k++)
     {
-      SortedList_insert(values.list, values.elements + k);
+      insert(values.list, values.elements[k]);
     }
 
+  
   int length;
-  length = SortedList_length(values.list);
+  length = list_length(values.list);
 
   if (length == -1)
     {
       fprintf(stdout, "ERROR: SortedList_length returned %d\n", length);
       exit(1);
     }
-  
-  fprintf(stdout, "List length: %d", SortedList_length(values.list));
+
+  fprintf(stdout, "List length: %d\n", length);
 
   SortedListElement_t* query;
 
@@ -50,8 +60,8 @@ void *threadfunction(void*p)
   
   for (k = 0; k < values.nIter; k++)
     {
-      query = SortedList_lookup(values.list, (values.elements+k)->key);
-      status = SortedList_delete(query);
+      query = lookup(values.list, values.elements[k]->key);
+      status = delete(query);
 
       if (status != 0)
 	{
@@ -59,19 +69,25 @@ void *threadfunction(void*p)
 	  exit(1);
 	}
     }
-  
-}
 
+}
   
 int main (int argc, char **argv) {
   int nIter;
   int nThreads;
   char yields[3];
+  pthread_mutex_init(&lock, NULL);
+  spinlock = 0;
+
+  insert = SortedList_insert;
+  delete = SortedList_delete;
+  lookup = SortedList_lookup;
+  list_length = SortedList_length;
   
   nIter = 1;
   nThreads = 1;
   
-  if (argc > 4)
+  if (argc > 5)
     usage(argv);
 
   int stop = 0;
@@ -97,6 +113,27 @@ int main (int argc, char **argv) {
     case 'y':
       strncpy(yields, optarg, 3); // only 3 possible yields
       break;
+    case 's':
+      switch(*optarg)
+	{
+	case 's':
+	  insert = SortedList_insert_s;
+	  delete = SortedList_delete_s;
+	  lookup = SortedList_lookup_s;
+	  list_length = SortedList_length_s;
+	  break;
+	case 'm':
+	  insert = SortedList_insert_m;
+	  delete = SortedList_delete_m;
+	  lookup = SortedList_lookup_m;
+	  list_length = SortedList_length_m;
+	  break;
+	default:
+	  fprintf(stderr, "ERROR: sync option &s not recognized\n", optarg);
+	  exit(1);
+	}
+      break;
+      
     case -1: // finished
       ++stop;
       break;
@@ -135,8 +172,8 @@ int main (int argc, char **argv) {
   
   int nElements = nThreads * nIter;
   printf("nElements: %d\n", nElements);
-  SortedListElement_t * elements[nElements];
-  char * keys[nElements];
+  SortedListElement_t** elements = malloc(sizeof(SortedListElement_t*) * nElements);
+  char** keys = malloc(sizeof(char*) * nElements);
 
   srand(time(NULL));
   for(i=0; i<nElements; i++ ) {
@@ -157,10 +194,8 @@ int main (int argc, char **argv) {
 
   pthread_t * threads = malloc(nThreads * sizeof(pthread_t*));
 
-  struct arguments parameters;
-  parameters.list = list;
-  parameters.elements = &elements;
-  parameters.nIter = nIter;
+  struct arguments* parameters;
+  parameters = malloc(nThreads * sizeof(struct arguments));
   
   struct timespec begin, end;
   clock_gettime(CLOCK_MONOTONIC, &begin);
@@ -169,9 +204,11 @@ int main (int argc, char **argv) {
   int t;
   int err;
   for(t = 0; t < nThreads; t++) {
-
-    parameters.elements = elements + t*nIter;
-    err = pthread_create(&threads[t], NULL, threadfunction, &parameters);
+    parameters[t].list = list;
+    parameters[t].nIter= nIter;
+    parameters[t].elements = &elements[t*nIter];
+    //    parameters.elements = elements + t*nIter;
+    err = pthread_create(&threads[t], NULL, threadfunction, &parameters[t]);
 
     if(err) {
       fprintf(stdout, "ERROR; pthread_create() failed with &d\n", err);
@@ -198,11 +235,17 @@ int main (int argc, char **argv) {
 	  nThreads, nIter, nElements, nOps);
   fprintf(stdout, "elapsed time: %d ns\n", timediff);
   fprintf(stdout, "per operation: %d ns\n", timediff/nOps);
-
+  
   free(list);
   free(threads);
-  for(i=0; i<nElements; i++)
+  free(parameters);
+  pthread_mutex_destroy(&lock);
+  for(i=0; i<nElements; i++) {
     free(elements[i]);
+    free(keys[i]);
+  }
+  free(elements);
+  free(keys);
   
   return 0;
 }

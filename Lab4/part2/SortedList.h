@@ -31,7 +31,8 @@ typedef struct SortedListElement SortedListElement_t;
  *		call pthread_yield in middle of critical section
  */
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element);
-
+void SortedList_insert_m(SortedList_t *list, SortedListElement_t *element);
+void SortedList_insert_s(SortedList_t *list, SortedListElement_t *element);
 /**
  * SortedList_delete ... remove an element from a sorted list
  *
@@ -49,6 +50,8 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element);
  *		call pthread_yield in middle of critical section
  */
 int SortedList_delete( SortedListElement_t *element);
+int SortedList_delete_m( SortedListElement_t *element);
+int SortedList_delete_s( SortedListElement_t *element);
 
 /**
  * SortedList_lookup ... search sorted list for a key
@@ -65,6 +68,8 @@ int SortedList_delete( SortedListElement_t *element);
  *		call pthread_yield in middle of critical section
  */
 SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key);
+SortedListElement_t *SortedList_lookup_m(SortedList_t *list, const char *key);
+SortedListElement_t *SortedList_lookup_s(SortedList_t *list, const char *key);
 
 /**
  * SortedList_length ... count elements in a sorted list
@@ -79,6 +84,8 @@ SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key);
  *		call pthread_yield in middle of critical section
  */
 int SortedList_length(SortedList_t *list);
+int SortedList_length_m(SortedList_t *list);
+int SortedList_length_s(SortedList_t *list);
 
 /**
  * variable to enable diagnostic calls to pthread_yield

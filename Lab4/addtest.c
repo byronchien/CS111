@@ -63,6 +63,8 @@ void add_mutex(long long *pointer, long long value) {
   long long sum = *pointer + value;
   *pointer = sum;
   pthread_mutex_unlock(&lock);
+  if (opt_yield)
+    pthread_yield();
 }
 
 
@@ -79,7 +81,10 @@ void add_spinlock(long long *pointer, long long value) {
   long long sum = *pointer + value;
   *pointer = sum;
 
-  __sync_lock_release(&spinlock);    
+  __sync_lock_release(&spinlock);
+  if (opt_yield)
+    pthread_yield();
+
 }
 
 
@@ -97,6 +102,10 @@ void add_atomic(long long *pointer, long long value) {
     new = old + value;
     __sync_val_compare_and_swap(pointer, old, new);
   }
+
+  if (opt_yield)
+    pthread_yield();
+
 }
 
 
