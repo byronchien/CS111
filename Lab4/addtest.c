@@ -5,13 +5,14 @@
 #include <getopt.h>
 #include <time.h>
 #include <pthread.h>
-#include <stdint.h>
+//#include <stdint.h>
 
 void usage(char **argv) {
   fprintf( stderr, "Usage: %s --iter=NINTERATIONS --threads=NTHREADS\n", argv[0] );
   exit(-1);
 }
 
+void update_count(unsigned long long value);
 void (*add_function)(long long *pointer, long long value);
 
 // this version of the add function does not use yield
@@ -22,7 +23,7 @@ void add(long long *pointer, long long value) {
   *pointer = sum;
 }
 
-uint64_t time_design;
+unsigned long long time_design;
 
 /**************************************************************
 / QUESTION 1.1
@@ -110,16 +111,16 @@ void add_atomic(long long *pointer, long long value) {
 }
 
 
-
 struct arguments
 {
   long long * counter;
   int iterations;
 };
 
+
 void *threadfunction(void *p)
 {
-  struct timespec begin,end;
+  struct timespec begin, end;
 
   struct arguments values;
   values = *(struct arguments*) p;
@@ -135,14 +136,12 @@ void *threadfunction(void *p)
       clock_gettime(CLOCK_MONOTONIC, &end);
       update_count(end.tv_nsec - begin.tv_nsec);
     }
-  
-  update_count(-130);
 }
 
-void update_count(long value)
+void update_count(unsigned long long value)
 {
-  long long new = time_design + value;
-  long long old = time_design;
+  unsigned long long new = time_design + value;
+  unsigned long long old = time_design;
 
   while(time_design != new) {
     old = time_design;
@@ -162,6 +161,7 @@ int main (int argc, char **argv) {
   correct = 0;
   
   time_design = 0;
+  struct timespec begin, end;
   
   add_function = add;
   
@@ -216,8 +216,7 @@ int main (int argc, char **argv) {
 	default:
 	  fprintf(stderr, "ERROR: sync option %s not recognized\n", optarg);
 	  exit(1);
-	}
-      
+	}      
       break;
     case 'c':
       correct = 1;
@@ -248,7 +247,6 @@ int main (int argc, char **argv) {
   parameters.iterations = nIter;
   pthread_t *threads = malloc(nThreads * sizeof(pthread_t*));
   
-  struct timespec begin, end;
   clock_gettime(CLOCK_MONOTONIC, &begin);
   
   int t;
@@ -270,7 +268,7 @@ int main (int argc, char **argv) {
 
   if (counter != 0)
     {
-      fprintf(stderr,"ERROR: final count = %d\n",counter);
+      fprintf(stderr,"ERROR: final count = %d\n", counter);
       status = 1;
     }
 
