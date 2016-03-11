@@ -52,13 +52,21 @@ only one thread is actually getting work done.
 
 
 QUESTIONS 2.1
-Explain the variation in time per operation vs the number of iterations? How would you propose to correct for this effect?
-
-
+Explain the variation in time per operation vs the number of iterations? How would you
+propose to correct for this effect?
+This variation is the same as the variation in time per operation in exercise 1. If there
+are few iterations, the cost of creating the threads drives the average cost of operations
+up. By increasing the number of operations, the true average cost per operation can be
+determined by diluting the effect of creating threads.
 
 QUESTIONS 2.2
-Compare the variation in time per protected operation vs the number of threads in Part 2 and in Part 1. Explain the difference.
-
+Compare the variation in time per protected operation vs the number of threads in Part 2
+and in Part 1. Explain the difference.
+The variation in time per protected operation in Part 2 and Part 1 for the same number of
+iterations and threads suggests better performance in Part 2. However, this variation is a
+result of the cost of creating threads such as in questions 2.1 and 1.2.1. Since there are
+more operations per iteration in part 2, the effect of creating threads is diluted fast
+resulting in what appears to be better performance.
 
 
 QUESTIONS 2.3
