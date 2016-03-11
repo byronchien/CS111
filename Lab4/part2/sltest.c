@@ -259,8 +259,10 @@ int main (int argc, char **argv) {
   
   clock_gettime(CLOCK_MONOTONIC, &end);
 
-  if (SortedList_length(list) != 0) {
-    fprintf(stderr, "Final length of list is not 0\n");
+  for(i=0; i<nLists; i++) {
+    if (SortedList_length(listlist[i]) != 0) {
+      fprintf(stderr, "Final length of list is not 0\n");
+    }
   }
 
   long nOps = nThreads*nIter*2*nElements;
@@ -277,8 +279,9 @@ int main (int argc, char **argv) {
   for(i=0; i<nElements; i++) {
     free(elements[i]);
     free(keys[i]);
-    free(listlist[i]);
   }
+  for(i=0; i<nLists; i++)
+    free(listlist[i]);
   free(elements);
   free(keys);
   free(listlist);
