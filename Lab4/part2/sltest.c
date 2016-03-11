@@ -20,7 +20,8 @@ volatile int spinlock;
 
 struct arguments
 {
-  SortedList_t *list;
+  SortedList_t** listlist;
+  int nLists;
   SortedListElement_t ** elements;
   int nIter,start;
 };
@@ -30,6 +31,21 @@ int (*delete) (SortedListElement_t *element);
 SortedListElement_t* (*lookup) (SortedList_t *list, const char *key);
 int (*list_length) (SortedList_t *list);
 
+int chooselist(char * key, int nLists)
+{
+  int k = 111;
+  long hash = 0;
+  
+  int i = 0;
+  while(key[i] != 0) {
+    hash += key[i] * pow(k, i);
+    i++;
+  }
+
+  return hash % nLists;
+}
+
+
 void *threadfunction(void*p)
 {
 
@@ -37,22 +53,25 @@ void *threadfunction(void*p)
   values = *(struct arguments*) p;
 
   int k;
+  int j;
   for (k = 0; k < values.nIter; k++)
     {
-      insert(values.list, values.elements[k]);
+      j = chooselist(values.elements[k]->key, values.nLists);
+      insert(values.listlist[j], values.elements[k]);
     }
 
-  
   int length;
-  length = list_length(values.list);
-
-  if (length == -1)
+  for (k = 0; k < values.nLists; k++)
     {
-      fprintf(stdout, "ERROR: SortedList_length returned %d\n", length);
-      exit(1);
-    }
 
-  fprintf(stdout, "List length: %d\n", length);
+      length = list_length(values.listlist[k]);
+      if (length == -1)
+	{
+	  fprintf(stdout, "ERROR: SortedList_length returned %d\n", length);
+	  exit(1);
+	}
+      fprintf(stdout, "List length: %d\n", length);
+    }
 
   SortedListElement_t* query;
 
@@ -61,7 +80,8 @@ void *threadfunction(void*p)
   
   for (k = 0; k < values.nIter; k++)
     {
-      query = lookup(values.list, values.elements[k]->key);
+      j = chooselist(values.elements[k]->key, values.nLists);
+      query = lookup(values.listlist[j], values.elements[k]->key);
       status = delete(query);
 
       if (status != 0)
@@ -72,21 +92,6 @@ void *threadfunction(void*p)
     }
 
 }
-
-
-int chooselist(char * key, int nLists)
-{
-  int k = 111;
-  long hash = 0;
-  
-  int i = 0;
-  while(key[i] != 0) {
-    hash += key[i] * pow(k, i);
-  }
-
-  return hash % nLists;
-}
-
 
 int main (int argc, char **argv) {
   int nIter;
@@ -239,7 +244,8 @@ int main (int argc, char **argv) {
   int t;
   int err;
   for(t = 0; t < nThreads; t++) {
-    parameters[t].list = list;
+    parameters[t].listlist = listlist;
+    parameters[t].nLists = nLists;
     parameters[t].nIter= nIter;
     parameters[t].elements = &elements[t*nIter];
     //    parameters.elements = elements + t*nIter;
