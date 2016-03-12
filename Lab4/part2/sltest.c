@@ -32,6 +32,7 @@ int (*delete) (SortedListElement_t *element);
 SortedListElement_t* (*lookup) (SortedList_t *list, const char *key);
 int (*list_length) (SortedList_t *list);
 
+/* Generate hash and return index of corresponding list */
 int chooselist(const char * key, int nLists)
 {
   int k = 111;
@@ -46,11 +47,12 @@ int chooselist(const char * key, int nLists)
   return hash % nLists;
 }
 
-void update_count(unsigned long long value)
+
+void update_count(struct timespec begin, struct timespec end)
 {
+  unsigned long long value = (end.tv_sec*1e9 + end.tv_nsec) - (begin.tv_sec*1e9 + begin.tv_nsec);
   unsigned long long new = time_design + value;
   unsigned long long old = time_design;
-
   while(time_design != new) {
     old = time_design;
     new = time_design + value;
@@ -73,7 +75,7 @@ void *threadfunction(void*p)
       j = chooselist(values.elements[k]->key, values.nLists);
       insert(values.listlist[j], values.elements[k]);
       clock_gettime(CLOCK_MONOTONIC, &end);
-      update_count(end.tv_nsec - begin.tv_nsec);
+      update_count(begin, end);
     }
 
   int length;
@@ -82,7 +84,7 @@ void *threadfunction(void*p)
       clock_gettime(CLOCK_MONOTONIC, &begin);
       length = list_length(values.listlist[k]);
       clock_gettime(CLOCK_MONOTONIC, &end);
-      update_count(end.tv_nsec - begin.tv_nsec);
+      update_count(begin, end);
       if (length == -1)
 	{
 	  fprintf(stdout, "ERROR: SortedList_length returned %d\n", length);
@@ -103,7 +105,7 @@ void *threadfunction(void*p)
       query = lookup(values.listlist[j], values.elements[k]->key);
       status = delete(query);
       clock_gettime(CLOCK_MONOTONIC, &end);
-      update_count(end.tv_nsec - begin.tv_nsec);
+      update_count(begin, end);
       if (status != 0)
 	{
 	  fprintf(stdout, "ERROR: SortedList_delete returned &d\n",status);
@@ -298,12 +300,12 @@ int main (int argc, char **argv) {
   unsigned long long nOps = nThreads*nIter*(nIter/nLists);
   time_design = correct ? time_design :
     (end.tv_sec*1e9 + end.tv_nsec) - (begin.tv_sec*1e9 + begin.tv_nsec);
-  unsigned long long tdiff = time_design;
+
   fprintf(stdout,
-       "%d threads x %d iterations x (ins + lookup/del) x (%d/2 avg len) = %d operations\n",
+	  "%d threads x %d iterations x (ins + lookup/del) x (%d/2 avg len) = %d operations\n",
 	  nThreads, nIter, nIter / nLists, nOps);
-  fprintf(stdout, "elapsed time: %d ns\n", (unsigned)tdiff);
-  fprintf(stdout, "per operation: %d ns\n", time_design/nOps);
+  fprintf(stdout, "elapsed time: %llu ns\n", time_design);
+  fprintf(stdout, "per operation: %llu ns\n", time_design/nOps);
   
   free(threads);
   free(parameters);
