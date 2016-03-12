@@ -78,19 +78,87 @@ number of threads per list.
 particular measurement).
 
 
-QUESTIONS 3.1
+QUESTIONS 3-1
 1. Why must the mutex be held when pthread_cond_wait is called?
-
+The function needs to be sure the condition is evaluating can't be changed during evaluation.
+This can prevent race conditions.
 
 2. Why must the mutex be released when the waiting thread is blocked?
-
+While blocked, the waiting thread is waiting for the condition to become true.
+If it doesn't release the mutex, it will begin waiting, but the conditional variables will still be locked.
 
 3. Why must the mutex be reacquired when the calling thread resumes?
-
+For the same reason as the first question.
+The thread must be able to safely evaluate the condition.
 
 4. Why must this be done inside of pthread_cond_wait? Why can't the caller simply release
 the mutex before calling pthread_cond_wait?
-
+Let's look at this code:
+while(!condition) {
+   pthread_cond_wait(&condvar, &mut);
+}
+Say pthread_cond_wait doesn't automatically release/reacquire the mutex; then we would need:
+while(!condition) {
+   pthread_mutex_unlock(&mut);
+   pthread_cond_wait(&condvar); // doesn't release/reacquire mutex
+   pthread_mutex_lock(&mut);
+}
+Between manually unlocking and locking the mutex, the conditional variables can be modified.
+This can cause unnessecary waiting.
 
 5. Can this be done in a user-mode implementation of pthread_cond_wait? If so, how? If it can
 only be implemented by a system call, explain why?
+No. It can only be implemented by a system call since when acquiring/releasing a mutex, it must be done atomically.
+
+
+PART 4
+During the lab, we saw that doing a few number of iterations results in a fairly ridiculous operation time average.
+We suggested that much of this is due to overhead, such as thread creation/deletion, context switching, etc.
+There are a lot of things that need to be calulated only once regardless of the number of operations.
+Because of where we were asked to collect timestamps, much of this overhead was including in the final time.
+
+By increasing the number of operations to a large number, the effects of this overhead is made negligible.
+
+We attempted to correct this and make a low number of iterations still get a fairly accurate operation time.
+To do this, we only collected timestamps while doing the actual operations (add, insert, delete functions, etc).
+We included an option --correct to enable this behavior, else the program will behave as before.
+We also wanted --correct to be fairly accurate for a large number of iterations.
+
+More detailed implementation:
+We have a global variable time_design that is initialized to 0.
+Every time we call a function that qualifies as an operation, we start the time.
+We then immediately collect the end time.
+The time difference is then added to time_design via an atomic operation.
+
+Here's some data that shows the improvement:
+
+PART 1
+iter=1
+	Original:  74362 ns
+	Corrected: 283 ns
+iter=100
+	Original:  709 ns
+	Corrected: 22 ns
+iter=100000
+	Original:  49 ns
+	Corrected: 21 ns
+
+
+PART 2
+iter=1
+	Original:  163121 ns
+	Corrected: 14720 ns
+iter=100
+	Original:  35 ns
+	Corrected: 16 ns
+iter=10000
+	Original:  7 ns
+	Corrected: 7 ns
+
+
+We can see that our solution improved the operation timing by several orders of magnitude for low iterations,
+while keeping the timing for large number of iterations true.
+
+Note that these readings become even better when using multiple threads.
+If a processer is running the program multithreaded, the timing can be too short since parallelism.
+Our solution fixes this by measuring every operation in each thread before taking the average.
