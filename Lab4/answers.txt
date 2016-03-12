@@ -72,11 +72,15 @@ resulting in what appears to be better performance.
 QUESTIONS 2.3
 1. Explain the the change in performance of the synchronized methods as a function of the
 number of threads per list.
-
+The performance of synchronized methods is more influenced by the number of lists used
+than the ratio of threads to list since the cost per operation is higher with more lists
+for the same ratio of threads to lists.
 
 2. Explain why threads per list is a more interesting number than threads (for this
 particular measurement).
-
+Threads per list is a more interesting way to measure performance since it shows how the
+performance is affected both the number of lists and the number of threads. In this case,
+both increase the cost per operation, but the number of threads affects performance more.
 
 QUESTIONS 3-1
 1. Why must the mutex be held when pthread_cond_wait is called?
